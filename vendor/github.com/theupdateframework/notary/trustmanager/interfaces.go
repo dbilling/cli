@@ -41,6 +41,9 @@ type KeyInfo struct {
 
 // KeyStore is a generic interface for private key storage
 type KeyStore interface {
+	// GenerateKey allow the keystore to generate a key, if supported.
+	// Keystores not providing key generation should return an error
+	GenerateKey(keyInfo KeyInfo, algorithm string) (data.PrivateKey, error)
 	// AddKey adds a key to the KeyStore, and if the key already exists,
 	// succeeds.  Otherwise, returns an error if it cannot add.
 	AddKey(keyInfo KeyInfo, privKey data.PrivateKey) error

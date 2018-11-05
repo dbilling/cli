@@ -679,6 +679,12 @@ func (s *YubiStore) ListKeys() map[string]trustmanager.KeyInfo {
 	return buildKeyMap(keys)
 }
 
+// GenerateKey requests that the yubi generate a key.  Yubi hardware supports this, but
+// it has yet to be implemented here.
+func (s *YubiStore) GenerateKey(keyInfo trustmanager.KeyInfo, algorithm string) (data.PrivateKey, error) {
+		return nil, fmt.Errorf("Not yet implemented")
+}
+
 // AddKey puts a key inside the Yubikey, as well as writing it to the backup store
 func (s *YubiStore) AddKey(keyInfo trustmanager.KeyInfo, privKey data.PrivateKey) error {
 	added, err := s.addKey(privKey.ID(), keyInfo.Role, privKey)

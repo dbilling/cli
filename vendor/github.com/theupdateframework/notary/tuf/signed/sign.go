@@ -13,6 +13,7 @@ package signed
 
 import (
 	"crypto/rand"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/theupdateframework/notary/trustmanager"
@@ -75,6 +76,11 @@ func Sign(service CryptoService, s *data.Signed, signingKeys []data.PublicKey,
 	// Do signing and generate list of signatures
 	for keyID, pk := range privKeys {
 		sig, err := pk.Sign(rand.Reader, *s.Signed, nil)
+		// DaveStart
+		fmt.Println("-------------------")
+		fmt.Printf("Sign()in Sign.go Public Key ID:%s algo:%s pub:%X sigAlgo:%s\n", pk.ID(), pk.Algorithm(), pk.Public(), pk.SignatureAlgorithm())
+		fmt.Printf("rand:%X \n message to sign:%X \n Sig output:%X \n", rand.Reader, *s.Signed, sig)
+		// DaveEnd
 		if err != nil {
 			logrus.Debugf("Failed to sign with key: %s. Reason: %v", keyID, err)
 			return err

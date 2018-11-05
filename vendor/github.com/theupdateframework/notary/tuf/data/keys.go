@@ -9,6 +9,7 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"math/big"
 
@@ -479,6 +480,9 @@ func (k RSAPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts) 
 			Hash:       crypto.SHA256,
 		}
 	}
+	// DaveStart
+	fmt.Println("Sign() called in keys.go")
+	// DaveEnd
 	return k.CryptoSigner().Sign(rand, hashed[:], opts)
 }
 
