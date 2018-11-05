@@ -191,7 +191,10 @@ $ docker -H ssh://example.com ps
 ```
 
 To use SSH connection, you need to set up `ssh` so that it can reach the
-remote host with public key authentication.
+remote host with public key authentication. Password authentication is not
+supported. If your key is protected with passphrase, you need to set up
+`ssh-agent`.
+
 Also, you need to have `docker` binary 18.09 or later on the daemon host.
 
 #### Bind Docker to another host/port or a Unix socket
@@ -1370,8 +1373,10 @@ This is a full example of the allowed configuration options on Linux:
 			]
 		}
 	},
-	"default-address-pools":[{"base":"172.80.0.0/16","size":24},
-	{"base":"172.90.0.0/16","size":24}]
+	"default-address-pools":[
+		{"base":"172.80.0.0/16","size":24},
+		{"base":"172.90.0.0/16","size":24}
+	]
 }
 ```
 
