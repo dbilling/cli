@@ -67,10 +67,6 @@ func (cs *CryptoService) Create(role data.RoleName, gun data.GUN, algorithm stri
 func (cs *CryptoService) GetPrivateKey(keyID string) (k data.PrivateKey, role data.RoleName, err error) {
 	for _, ks := range cs.keyStores {
 		if k, role, err = ks.GetKey(keyID); err == nil {
-			// DaveStart
-			fmt.Println("-------------------")
-			fmt.Printf("GetKey()in crypto_service.go KeyId:%s returned role:%s \n Public Key:%X\n", keyID, role, k.Public())
-			// DaveEnd
 			return
 		}
 		switch err.(type) {
@@ -96,10 +92,6 @@ func (cs *CryptoService) GetKey(keyID string) data.PublicKey {
 func (cs *CryptoService) GetKeyInfo(keyID string) (trustmanager.KeyInfo, error) {
 	for _, store := range cs.keyStores {
 		if info, err := store.GetKeyInfo(keyID); err == nil {
-			// DaveStart
-			fmt.Println("-------------------")
-			fmt.Println("GetKeyInfo() in crypto_service.go (GetKeyInfo), key.ID:", keyID, " keyinfo:", info)
-			// DaveEnd
 			return info, nil
 		}
 	}
@@ -120,10 +112,6 @@ func (cs *CryptoService) AddKey(role data.RoleName, gun data.GUN, key data.Priva
 	// First check if this key already exists in any of our keystores
 	for _, ks := range cs.keyStores {
 		if keyInfo, err := ks.GetKeyInfo(key.ID()); err == nil {
-			// DaveStart
-			fmt.Println("-------------------")
-			fmt.Println("GetKeyInfo()in crypto_service.go (AddKey), key.ID:", key.ID(), " keyinfo:", keyInfo)
-			// DaveEnd
 			if keyInfo.Role != role {
 				return fmt.Errorf("key with same ID already exists for role: %s", keyInfo.Role.String())
 			}
@@ -135,10 +123,6 @@ func (cs *CryptoService) AddKey(role data.RoleName, gun data.GUN, key data.Priva
 	for _, ks := range cs.keyStores {
 		// Try to add to this keystore, return if successful
 		if err = ks.AddKey(trustmanager.KeyInfo{Role: role, Gun: gun}, key); err == nil {
-			// DaveStart
-			fmt.Println("-------------------")
-			fmt.Printf("AddKey() in crypto_service.go, KeyInfo gun: %s role: %s Public: %X\n", gun, role, key.Public())
-			// DaveEnd
 			return nil
 		}
 	}

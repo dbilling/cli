@@ -245,7 +245,7 @@ func (v ECDSAVerifier) Verify(key data.PublicKey, sig []byte, msg []byte) error 
 	sigLength := len(sig)
 	expectedOctetLength := 2 * ((ecdsaPubKey.Params().BitSize + 7) >> 3)
 	if sigLength != expectedOctetLength {
-		logrus.Debugf("signature had an unexpected length")
+		logrus.Debugf("signature had an unexpected length of %d, expected %d", sigLength, expectedOctetLength)
 		return ErrInvalid
 	}
 
