@@ -5,6 +5,7 @@ package client
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
 	"github.com/theupdateframework/notary"
 	"github.com/theupdateframework/notary/trustmanager"
 // removed for now...	"github.com/theupdateframework/notary/trustmanager/yubikey"
@@ -22,11 +23,9 @@ func getKeyStores(baseDir string, retriever notary.PassRetriever) ([]trustmanage
 	grpcKeyStore, err := grpckeystore.NewGRPCKeyStore()
 	if err == nil {
 	  keyStores = []trustmanager.KeyStore{grpcKeyStore, fileKeyStore}
-		fmt.Println("-------------------")
-		fmt.Printf("GRPCKeyStore connected and in use\n")
+		logrus.Debug("GRPCKeyStore connected and in use")
   } else {
-		fmt.Println("-------------------")
-		fmt.Printf("GRPCKeyStore disabled, connection error:%s\n", err)
+		logrus.Debugf("GRPCKeyStore disabled, connection error:%s", err)
 	}
   // TODO:  restore all this so yubikeys work too!
 	//	if yubiKeyStore != nil {

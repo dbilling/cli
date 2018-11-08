@@ -140,7 +140,7 @@ func (g *GRPCPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts
 	//	return nil, fmt.Errorf("Not working with a ECDSA public key")
 	//}
   //octetLength := ((ecdsaPubKey.Params().BitSize + 7) >> 3)
-	octetLength := 32 // hack!!!
+	octetLength := 32 // hack!!! should calculate it!!!
 	// MUST include leading zeros in the output
 	rBuf := make([]byte, octetLength-len(rBytes), octetLength)
 	sBuf := make([]byte, octetLength-len(sBytes), octetLength)
@@ -203,20 +203,15 @@ func (s *GRPCKeyStore) Location() string {
 
 // The following methods implement the PrivateKey inteface
 
-// GetKeyInfo returns the corresponding gun and role key info for a keyID
-func (s *GRPCKeyStore) GetKeyInfo(keyID string) (trustmanager.KeyInfo, error) {
-	logrus.Debugf("GRPCKeystore GetKeyInfo invoked for keyID %s", keyID)
-	logrus.Debug("GRPCKeystore GetKeyInfo not implemented")
-	return trustmanager.KeyInfo{}, fmt.Errorf("Not yet implemented")
-}
+
 
 // GenerateKey requests that the keystore internally generate a key.
 func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo, algorithm string) (data.PrivateKey, error) {
 
   logrus.Debugf("GRPCKeystore GenerateKey invoked for role:%s gun:%s ", keyInfo.Role, keyInfo.Gun)
 	// We only support generating root keys for now
-	if keyInfo.Role != data.CanonicalRootRole {
-		 logrus.Debugf("GRPC GenerateKey refused: currently only supporting root role, requested role:%s", keyInfo.Role)
+	if (keyInfo.Role != data.CanonicalRootRole) && (keyInfo.Role != data.CanonicalTargetsRole)  {
+		 logrus.Debugf("GRPC GenerateKey error: currently only supporting root and targets, requested role:%s", keyInfo.Role)
 		return nil, fmt.Errorf("GRPC keystore only supports generating root keys, got role %s", keyInfo.Role)
 	}
 
@@ -271,7 +266,7 @@ func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo, algorithm strin
 			remoteKeyId: rsp.RemoteKeyId,
 	}
 
-  logrus.Debugf("GRPC GenerateKey (MakeKey/AssociateKey Succeeded: %s", rsp.DebugMsg)
+  logrus.Debug("GRPC GenerateKey (MakeKey/AssociateKey) Succeeded")
 	return privKey, nil
 }
 
@@ -283,7 +278,7 @@ func (s *GRPCKeyStore) AddKey(keyInfo trustmanager.KeyInfo, privKey data.Private
 
 	// TODO:  currently for prototype, we don't do addkey
 	if keyInfo.Role != "" {
-	 logrus.Debug("GRPC AddKey operation is currently disabled", keyInfo.Role, keyInfo.Gun)
+	  logrus.Debug("GRPC AddKey operation is currently disabled")
 		return fmt.Errorf("Not supported yet")
 	}
 
@@ -349,7 +344,7 @@ func (s *GRPCKeyStore) GetKey(keyID string) (data.PrivateKey, data.RoleName, err
 	pubKey := data.NewECDSAPublicKey(rsp.PublicKey)
 	privKey := NewGRPCPrivateKey(key.remoteKeyId, s, *pubKey)
 	if privKey == nil {
-		return nil, "", fmt.Errorf("could not initialize new GRPCdata.RoleName(rsp.Role)")
+		return nil, "", fmt.Errorf("error initializing private key")
 	}
 	logrus.Debugf("GRPC GetKey operation succeeded for role: %s", rsp.Role)
 	return privKey, data.RoleName(rsp.Role), err
@@ -361,6 +356,16 @@ func buildKeyMap(keys map[string]GRPCKey) map[string]trustmanager.KeyInfo {
 		res[k] = trustmanager.KeyInfo{Role: v.role, Gun: v.gun}
 	}
 	return res
+}
+
+// GetKeyInfo returns the corresponding gun and role key info for a keyID
+func (s *GRPCKeyStore) GetKeyInfo(keyID string) (trustmanager.KeyInfo, error) {
+	logrus.Debugf("GRPCkeystore GetKeyInfo operation called for keyId: %s", keyID)
+	key, ok := s.keys[keyID]
+	if !ok {
+		return trustmanager.KeyInfo{}, fmt.Errorf("Could not find info for keyID %s", keyID)
+	}
+	return trustmanager.KeyInfo{Role: key.role, Gun: key.gun}, nil
 }
 
 // ListKeys returns a list of unique PublicKeys present on the KeyFileStore, by returning a copy of the keyInfoMap
