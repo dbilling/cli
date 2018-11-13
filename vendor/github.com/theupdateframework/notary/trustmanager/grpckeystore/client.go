@@ -20,7 +20,7 @@ import (
 	"github.com/theupdateframework/notary/trustmanager"
 	"github.com/theupdateframework/notary/tuf/data"
   "github.com/theupdateframework/notary/tuf/signed"
-  // "github.com/theupdateframework/notary/tuf/utils"
+	//"github.com/theupdateframework/notary/tuf/utils"
 )
 
 // DefaultTimeout is the time a request will block waiting for a response
@@ -87,7 +87,7 @@ func (g *GRPCPrivateKey) CryptoSigner() crypto.Signer {
 // is is not used for the remote store case
 func (g *GRPCPrivateKey) Private() []byte {
 	// We cannot return the private material from the remote store
-	logrus.Debugf("GRPC remote key store: Invalid access for key: %s", g.ID())
+	logrus.Debugf("GRPCkeystore: Invalid key access attempt for key: %s", g.ID())
 	return nil
 }
 
@@ -105,6 +105,7 @@ func (g *GRPCPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts
 	v := signed.Verifiers[data.ECDSASignature]
 
   logrus.Debugf("GRPCkeystore Sign invoked for keyid: %s", g.ID())
+
   hash := sha256.Sum256(msg)
 	var hashbytes []byte = hash[:]
 	req := &SignReq{
@@ -119,11 +120,13 @@ func (g *GRPCPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts
 	rsp, err := s.client.Sign(ctx, req)
 
 	if err != nil {
-	  return nil, fmt.Errorf("GRPC Sign error: %s", rsp.DebugMsg)
+		logrus.Debugf("GRPCkeystore Sign failed: %s", err)
+	  return nil, fmt.Errorf("GRPC Sign failed: %s", err)
 	}
 
   // signature comes back as DER encoded.  TUF expects
   // just r and s concatenated together.  So we need to convert...
+	// TODO: make this handle all key types
 	type ecdsaSig struct {
 		R *big.Int
 		S *big.Int
@@ -131,7 +134,8 @@ func (g *GRPCPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts
 	ecdsasig := ecdsaSig{}
 	_, err = asn1.Unmarshal(rsp.Signature, &ecdsasig)
   if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal ECDSA signature: %v", err)
+		logrus.Debugf("GRPCkeystore Sign error - signature unmarshal: %s", err)
+		return nil, fmt.Errorf("failed to unmarshal ECDSA signature: %s", err)
   }
 	rBytes, sBytes := ecdsasig.R.Bytes(), ecdsasig.S.Bytes()
 
@@ -150,7 +154,8 @@ func (g *GRPCPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts
 
 	err = v.Verify(&g.ECDSAPublicKey, sig, msg)
 	if err != nil {
-			return nil, fmt.Errorf("GRPC signature verfication error: %s", err)
+		logrus.Debugf("GRPCkeystore Sign error - signature verify: %s", err)
+	  return nil, fmt.Errorf("GRPC signature verfication error: %s", err)
 	}
   logrus.Debug("GRPCkeystore Sign succeeded")
 	return sig, nil
@@ -203,22 +208,21 @@ func (s *GRPCKeyStore) Location() string {
 
 // The following methods implement the PrivateKey inteface
 
-
-
 // GenerateKey requests that the keystore internally generate a key.
 func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo, algorithm string) (data.PrivateKey, error) {
 
-  logrus.Debugf("GRPCKeystore GenerateKey invoked for role:%s gun:%s ", keyInfo.Role, keyInfo.Gun)
+  logrus.Debugf("GRPCKeystore GenerateKey request for role:%s gun:%s ", keyInfo.Role, keyInfo.Gun)
 	// We only support generating root keys for now
 	if (keyInfo.Role != data.CanonicalRootRole) && (keyInfo.Role != data.CanonicalTargetsRole)  {
-		 logrus.Debugf("GRPC GenerateKey error: currently only supporting root and targets, requested role:%s", keyInfo.Role)
+		 logrus.Debugf("GRPCKeystore GenerateKey error: currently only supporting root and targets, requested role:%s", keyInfo.Role)
 		return nil, fmt.Errorf("GRPC keystore only supports generating root keys, got role %s", keyInfo.Role)
 	}
 
-	// TODO: support additional key types besides ecdsa
-	if (algorithm != data.ECDSAKey) {
-		return nil, fmt.Errorf("Currently Unsupported Key Type: %s", algorithm)
-	}
+// TODO: support additional key types besides ecdsa
+//  if (algorithm != data.ECDSAKey) {
+//	  logrus.Debugf("GRPCKeystore GenerateKey error: currently only supporting ecdsa, requested type:%s", algorithm)
+//	  return nil, fmt.Errorf("Currently Unsupported Key Type: %s", algorithm)
+//	}
 
 	req := &MakeKeyReq{
 		Gun:                string(keyInfo.Gun),
@@ -231,15 +235,24 @@ func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo, algorithm strin
 	rsp, err := s.client.MakeKey(ctx, req)
 
 	if err != nil {
-		return nil, fmt.Errorf("GRPC MakeKey error: %s", rsp.DebugMsg)
+		logrus.Debugf("GRPCKeystore MakeKey RPC Operation Failed: %s", err)
+		return nil, fmt.Errorf("GRPCKeystore MakeKey failed: %s", err)
 	}
 
-  // The public key returned from the GRPC server is already expected
-	// to be DER encoded.
-	// TODO: support additional key types besides ecdsa...
-	pubKey := data.NewECDSAPublicKey(rsp.PublicKey)
-	privKey := NewGRPCPrivateKey(rsp.RemoteKeyId, s, *pubKey)
+  // The public key returned from the GRPC keystore is expected
+	// to be ASN.1 DER encoded.  That means the key type (e.g. ecdsa/rsa)
+	// pertenant information (key size, etc) are imbedded in the encoding.
+//  TODO: move from ecdsa only to support all key types
+//	keyType, err := utils.KeyTypeForPublicKey(rsp.PublicKey)
+//  if err != nil {
+//		return nil, fmt.Errorf("GRPCKeystore parse PublicKey failed: %s", err)
+//  }
+//  pubKey := data.NewPublicKey(keyType, rsp.PublicKey)
+//	privKey := NewGRPCPrivateKey(rsp.RemoteKeyId, s, pubKey)
+  pubKey := data.NewECDSAPublicKey(rsp.PublicKey)
+  privKey := NewGRPCPrivateKey(rsp.RemoteKeyId, s, *pubKey)
 	if privKey == nil {
+		logrus.Debug("GRPCKeystore GenerateKey failed to initialize new key")
 		return nil, fmt.Errorf("could not initialize new GRPCPrivateKey")
 	}
 
@@ -254,10 +267,11 @@ func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo, algorithm strin
 	}
 	ctx, cancel = s.getContext()
 	defer cancel()
-	akrsp, err := s.client.AssociateKey(ctx, akreq)
+	_, err = s.client.AssociateKey(ctx, akreq)
 
 	if err != nil {
-		return nil, fmt.Errorf("GRPC AssociateKey error: %s", akrsp.DebugMsg)
+		logrus.Debugf("GRPCKeystore AssociateKey RPC Operation Failed: %s", err)
+		return nil, fmt.Errorf("GRPCKeystore AssociateKey failed: %s", err)
 	}
 
 	s.keys[privKey.ID()] = GRPCKey{
@@ -282,11 +296,6 @@ func (s *GRPCKeyStore) AddKey(keyInfo trustmanager.KeyInfo, privKey data.Private
 		return fmt.Errorf("Not supported yet")
 	}
 
-	// We only allow adding root keys for now
-	if keyInfo.Role != data.CanonicalRootRole {
-		return fmt.Errorf("GRPC keystore only supports storing root keys, got %s for key: %s", keyInfo.Role, privKey.ID())
-	}
-
 	req := &AddKeyReq{
 		KeyId:              privKey.ID(),
 		Gun:                string(keyInfo.Gun),
@@ -301,7 +310,8 @@ func (s *GRPCKeyStore) AddKey(keyInfo trustmanager.KeyInfo, privKey data.Private
 	rsp, err := s.client.AddKey(ctx, req)
 
   if err != nil {
-		return fmt.Errorf("GRPC AddKey error: %s", rsp.DebugMsg)
+		logrus.Debugf("GRPCkeystore AddKey RPC Operation Failed: %s", err)
+		return fmt.Errorf("GRPC AddKey error: %s", err)
 	}
 
 	s.keys[privKey.ID()] = GRPCKey{
@@ -310,7 +320,7 @@ func (s *GRPCKeyStore) AddKey(keyInfo trustmanager.KeyInfo, privKey data.Private
 			remoteKeyId: rsp.RemoteKeyId,
 	}
 
-  logrus.Debugf("GRPC AddKey Operation Succeeded: %s", rsp.DebugMsg)
+  logrus.Debugf("GRPCkeystore AddKey Operation Succeeded: %s", rsp.DebugMsg)
 	return nil
 }
 
@@ -332,7 +342,8 @@ func (s *GRPCKeyStore) GetKey(keyID string) (data.PrivateKey, data.RoleName, err
 	rsp, err := s.client.GetKey(ctx, req)
 
 	if err != nil {
-		return nil, "", fmt.Errorf("GRPC GetKey error: %s", rsp.DebugMsg)
+		logrus.Debugf("GRPCkeystore GetKey RPC Operation Failed: %s", err)
+		return nil, "", fmt.Errorf("GRPC GetKey error: %s", err)
 	}
 
 	// The public key returned from the GRPC server is already expected
@@ -344,7 +355,8 @@ func (s *GRPCKeyStore) GetKey(keyID string) (data.PrivateKey, data.RoleName, err
 	pubKey := data.NewECDSAPublicKey(rsp.PublicKey)
 	privKey := NewGRPCPrivateKey(key.remoteKeyId, s, *pubKey)
 	if privKey == nil {
-		return nil, "", fmt.Errorf("error initializing private key")
+		logrus.Debugf("GRPCkeystore GetKey failed to initialize key")
+		return nil, "", fmt.Errorf("error initializing key")
 	}
 	logrus.Debugf("GRPC GetKey operation succeeded for role: %s", rsp.Role)
 	return privKey, data.RoleName(rsp.Role), err
@@ -360,9 +372,12 @@ func buildKeyMap(keys map[string]GRPCKey) map[string]trustmanager.KeyInfo {
 
 // GetKeyInfo returns the corresponding gun and role key info for a keyID
 func (s *GRPCKeyStore) GetKeyInfo(keyID string) (trustmanager.KeyInfo, error) {
+
 	logrus.Debugf("GRPCkeystore GetKeyInfo operation called for keyId: %s", keyID)
+
 	key, ok := s.keys[keyID]
 	if !ok {
+		logrus.Debugf("GRPCkeystore GetKeyInfo could not find info: %s", keyID)
 		return trustmanager.KeyInfo{}, fmt.Errorf("Could not find info for keyID %s", keyID)
 	}
 	return trustmanager.KeyInfo{Role: key.role, Gun: key.gun}, nil
@@ -370,9 +385,12 @@ func (s *GRPCKeyStore) GetKeyInfo(keyID string) (trustmanager.KeyInfo, error) {
 
 // ListKeys returns a list of unique PublicKeys present on the KeyFileStore, by returning a copy of the keyInfoMap
 func (s *GRPCKeyStore) ListKeys() map[string]trustmanager.KeyInfo {
+
 	logrus.Debug("GRPCkeystore ListKeys operation invoked")
+
 	if len(s.keys) > 0 {
-	return buildKeyMap(s.keys)
+    logrus.Debugf("GRPCkeystore ListKeys returning cashed list of %d keys", len(s.keys))
+	  return buildKeyMap(s.keys)
   }
 
   keys := make(map[string]GRPCKey)
@@ -384,8 +402,9 @@ func (s *GRPCKeyStore) ListKeys() map[string]trustmanager.KeyInfo {
 
 
 	if err != nil {
-		logrus.Debugf("GRPC ListKeys error: %s", rsp.DebugMsg)
-		return nil
+		logrus.Debugf("GRPCkeystore ListKeys RPC Operation Failed: %s", err)
+		// return a blank list...
+		return buildKeyMap(keys)
 	}
 
 	rspkeys := rsp.GetKeyData()
@@ -397,11 +416,10 @@ func (s *GRPCKeyStore) ListKeys() map[string]trustmanager.KeyInfo {
 					remoteKeyId: ki.GetRemoteKeyId(),
 			}
 		}
-	} else {
-			// no keys found
 	}
+	// save the results into the local list
 	s.keys = keys
-	logrus.Debugf("GRPCKeystore ListKeys returned %d keys", len(keys))
+	logrus.Debugf("GRPCKeystore ListKeys succeeded, returned %d keys", len(keys))
 	return buildKeyMap(keys)
 }
 

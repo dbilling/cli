@@ -278,7 +278,7 @@ func ParsePEMPublicKey(pubKeyBytes []byte) (data.PublicKey, error) {
 		}
 		return CertToKey(cert), nil
 	case "PUBLIC KEY":
-		keyType, err := keyTypeForPublicKey(pemBlock.Bytes)
+		keyType, err := KeyTypeForPublicKey(pemBlock.Bytes)
 		if err != nil {
 			return nil, err
 		}
@@ -288,7 +288,7 @@ func ParsePEMPublicKey(pubKeyBytes []byte) (data.PublicKey, error) {
 	}
 }
 
-func keyTypeForPublicKey(pubKeyBytes []byte) (string, error) {
+func KeyTypeForPublicKey(pubKeyBytes []byte) (string, error) {
 	pub, err := x509.ParsePKIXPublicKey(pubKeyBytes)
 	if err != nil {
 		return "", fmt.Errorf("unable to parse pem encoded public key: %v", err)
