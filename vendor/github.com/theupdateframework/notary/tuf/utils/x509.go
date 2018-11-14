@@ -265,7 +265,6 @@ func ParsePEMPublicKey(pubKeyBytes []byte) (data.PublicKey, error) {
 	if pemBlock == nil {
 		return nil, errors.New("no valid public key found")
 	}
-
 	switch pemBlock.Type {
 	case "CERTIFICATE":
 		cert, err := x509.ParseCertificate(pemBlock.Bytes)
@@ -278,7 +277,7 @@ func ParsePEMPublicKey(pubKeyBytes []byte) (data.PublicKey, error) {
 		}
 		return CertToKey(cert), nil
 	case "PUBLIC KEY":
-		keyType, err := KeyTypeForPublicKey(pemBlock.Bytes)
+		keyType, err := keyTypeForPublicKey(pemBlock.Bytes)
 		if err != nil {
 			return nil, err
 		}
@@ -288,7 +287,22 @@ func ParsePEMPublicKey(pubKeyBytes []byte) (data.PublicKey, error) {
 	}
 }
 
-func KeyTypeForPublicKey(pubKeyBytes []byte) (string, error) {
+// ParsePublicKey takes a ASN.1 DER encoded public key and returns a
+// data.PublicKey
+func ParsePublicKeytoNewKey(pubKeyBytes []byte) (data.PublicKey, error) {
+  pub, err := x509.ParsePKIXPublicKey(pubKeyBytes)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse ASN.1 DER encoded public key: %v", err)
+	}
+	switch pub.(type) {
+	case *ecdsa.PublicKey:
+		return data.ECDSAKey, nil
+	case *rsa.PublicKey:
+		return data.RSAKey, nil
+	}
+}
+
+func keyTypeForPublicKey(pubKeyBytes []byte) (string, error) {
 	pub, err := x509.ParsePKIXPublicKey(pubKeyBytes)
 	if err != nil {
 		return "", fmt.Errorf("unable to parse pem encoded public key: %v", err)
