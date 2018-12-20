@@ -22,9 +22,56 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type MakeKeyReq struct {
+type GenerateKeyReq struct {
 	Gun                  string   `protobuf:"bytes,1,opt,name=Gun,proto3" json:"Gun,omitempty"`
 	Role                 string   `protobuf:"bytes,2,opt,name=Role,proto3" json:"Role,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GenerateKeyReq) Reset()         { *m = GenerateKeyReq{} }
+func (m *GenerateKeyReq) String() string { return proto.CompactTextString(m) }
+func (*GenerateKeyReq) ProtoMessage()    {}
+func (*GenerateKeyReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dd18bd41430f085c, []int{0}
+}
+
+func (m *GenerateKeyReq) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GenerateKeyReq.Unmarshal(m, b)
+}
+func (m *GenerateKeyReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GenerateKeyReq.Marshal(b, m, deterministic)
+}
+func (m *GenerateKeyReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GenerateKeyReq.Merge(m, src)
+}
+func (m *GenerateKeyReq) XXX_Size() int {
+	return xxx_messageInfo_GenerateKeyReq.Size(m)
+}
+func (m *GenerateKeyReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_GenerateKeyReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GenerateKeyReq proto.InternalMessageInfo
+
+func (m *GenerateKeyReq) GetGun() string {
+	if m != nil {
+		return m.Gun
+	}
+	return ""
+}
+
+func (m *GenerateKeyReq) GetRole() string {
+	if m != nil {
+		return m.Role
+	}
+	return ""
+}
+
+type GenerateKeyRsp struct {
+	RemoteKeyId          string   `protobuf:"bytes,1,opt,name=RemoteKeyId,proto3" json:"RemoteKeyId,omitempty"`
+	PublicKey            []byte   `protobuf:"bytes,2,opt,name=PublicKey,proto3" json:"PublicKey,omitempty"`
 	Algorithm            string   `protobuf:"bytes,3,opt,name=Algorithm,proto3" json:"Algorithm,omitempty"`
 	SignatureAlgorithm   string   `protobuf:"bytes,4,opt,name=SignatureAlgorithm,proto3" json:"SignatureAlgorithm,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -32,122 +79,62 @@ type MakeKeyReq struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *MakeKeyReq) Reset()         { *m = MakeKeyReq{} }
-func (m *MakeKeyReq) String() string { return proto.CompactTextString(m) }
-func (*MakeKeyReq) ProtoMessage()    {}
-func (*MakeKeyReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{0}
-}
-
-func (m *MakeKeyReq) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MakeKeyReq.Unmarshal(m, b)
-}
-func (m *MakeKeyReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MakeKeyReq.Marshal(b, m, deterministic)
-}
-func (m *MakeKeyReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MakeKeyReq.Merge(m, src)
-}
-func (m *MakeKeyReq) XXX_Size() int {
-	return xxx_messageInfo_MakeKeyReq.Size(m)
-}
-func (m *MakeKeyReq) XXX_DiscardUnknown() {
-	xxx_messageInfo_MakeKeyReq.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MakeKeyReq proto.InternalMessageInfo
-
-func (m *MakeKeyReq) GetGun() string {
-	if m != nil {
-		return m.Gun
-	}
-	return ""
-}
-
-func (m *MakeKeyReq) GetRole() string {
-	if m != nil {
-		return m.Role
-	}
-	return ""
-}
-
-func (m *MakeKeyReq) GetAlgorithm() string {
-	if m != nil {
-		return m.Algorithm
-	}
-	return ""
-}
-
-func (m *MakeKeyReq) GetSignatureAlgorithm() string {
-	if m != nil {
-		return m.SignatureAlgorithm
-	}
-	return ""
-}
-
-type MakeKeyRsp struct {
-	RemoteKeyId          string   `protobuf:"bytes,1,opt,name=RemoteKeyId,proto3" json:"RemoteKeyId,omitempty"`
-	PublicKey            []byte   `protobuf:"bytes,2,opt,name=PublicKey,proto3" json:"PublicKey,omitempty"`
-	DebugMsg             string   `protobuf:"bytes,3,opt,name=DebugMsg,proto3" json:"DebugMsg,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *MakeKeyRsp) Reset()         { *m = MakeKeyRsp{} }
-func (m *MakeKeyRsp) String() string { return proto.CompactTextString(m) }
-func (*MakeKeyRsp) ProtoMessage()    {}
-func (*MakeKeyRsp) Descriptor() ([]byte, []int) {
+func (m *GenerateKeyRsp) Reset()         { *m = GenerateKeyRsp{} }
+func (m *GenerateKeyRsp) String() string { return proto.CompactTextString(m) }
+func (*GenerateKeyRsp) ProtoMessage()    {}
+func (*GenerateKeyRsp) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd18bd41430f085c, []int{1}
 }
 
-func (m *MakeKeyRsp) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_MakeKeyRsp.Unmarshal(m, b)
+func (m *GenerateKeyRsp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GenerateKeyRsp.Unmarshal(m, b)
 }
-func (m *MakeKeyRsp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_MakeKeyRsp.Marshal(b, m, deterministic)
+func (m *GenerateKeyRsp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GenerateKeyRsp.Marshal(b, m, deterministic)
 }
-func (m *MakeKeyRsp) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MakeKeyRsp.Merge(m, src)
+func (m *GenerateKeyRsp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GenerateKeyRsp.Merge(m, src)
 }
-func (m *MakeKeyRsp) XXX_Size() int {
-	return xxx_messageInfo_MakeKeyRsp.Size(m)
+func (m *GenerateKeyRsp) XXX_Size() int {
+	return xxx_messageInfo_GenerateKeyRsp.Size(m)
 }
-func (m *MakeKeyRsp) XXX_DiscardUnknown() {
-	xxx_messageInfo_MakeKeyRsp.DiscardUnknown(m)
+func (m *GenerateKeyRsp) XXX_DiscardUnknown() {
+	xxx_messageInfo_GenerateKeyRsp.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_MakeKeyRsp proto.InternalMessageInfo
+var xxx_messageInfo_GenerateKeyRsp proto.InternalMessageInfo
 
-func (m *MakeKeyRsp) GetRemoteKeyId() string {
+func (m *GenerateKeyRsp) GetRemoteKeyId() string {
 	if m != nil {
 		return m.RemoteKeyId
 	}
 	return ""
 }
 
-func (m *MakeKeyRsp) GetPublicKey() []byte {
+func (m *GenerateKeyRsp) GetPublicKey() []byte {
 	if m != nil {
 		return m.PublicKey
 	}
 	return nil
 }
 
-func (m *MakeKeyRsp) GetDebugMsg() string {
+func (m *GenerateKeyRsp) GetAlgorithm() string {
 	if m != nil {
-		return m.DebugMsg
+		return m.Algorithm
+	}
+	return ""
+}
+
+func (m *GenerateKeyRsp) GetSignatureAlgorithm() string {
+	if m != nil {
+		return m.SignatureAlgorithm
 	}
 	return ""
 }
 
 type AssociateKeyReq struct {
-	KeyId                string   `protobuf:"bytes,1,opt,name=KeyId,proto3" json:"KeyId,omitempty"`
-	RemoteKeyId          string   `protobuf:"bytes,2,opt,name=RemoteKeyId,proto3" json:"RemoteKeyId,omitempty"`
-	Gun                  string   `protobuf:"bytes,3,opt,name=Gun,proto3" json:"Gun,omitempty"`
-	Role                 string   `protobuf:"bytes,4,opt,name=Role,proto3" json:"Role,omitempty"`
-	Algorithm            string   `protobuf:"bytes,5,opt,name=Algorithm,proto3" json:"Algorithm,omitempty"`
-	SignatureAlgorithm   string   `protobuf:"bytes,6,opt,name=SignatureAlgorithm,proto3" json:"SignatureAlgorithm,omitempty"`
-	PublicKey            []byte   `protobuf:"bytes,7,opt,name=PublicKey,proto3" json:"PublicKey,omitempty"`
+	RemoteKeyId          string   `protobuf:"bytes,1,opt,name=RemoteKeyId,proto3" json:"RemoteKeyId,omitempty"`
+	KeyId                string   `protobuf:"bytes,2,opt,name=KeyId,proto3" json:"KeyId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -178,13 +165,6 @@ func (m *AssociateKeyReq) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AssociateKeyReq proto.InternalMessageInfo
 
-func (m *AssociateKeyReq) GetKeyId() string {
-	if m != nil {
-		return m.KeyId
-	}
-	return ""
-}
-
 func (m *AssociateKeyReq) GetRemoteKeyId() string {
 	if m != nil {
 		return m.RemoteKeyId
@@ -192,43 +172,14 @@ func (m *AssociateKeyReq) GetRemoteKeyId() string {
 	return ""
 }
 
-func (m *AssociateKeyReq) GetGun() string {
+func (m *AssociateKeyReq) GetKeyId() string {
 	if m != nil {
-		return m.Gun
+		return m.KeyId
 	}
 	return ""
-}
-
-func (m *AssociateKeyReq) GetRole() string {
-	if m != nil {
-		return m.Role
-	}
-	return ""
-}
-
-func (m *AssociateKeyReq) GetAlgorithm() string {
-	if m != nil {
-		return m.Algorithm
-	}
-	return ""
-}
-
-func (m *AssociateKeyReq) GetSignatureAlgorithm() string {
-	if m != nil {
-		return m.SignatureAlgorithm
-	}
-	return ""
-}
-
-func (m *AssociateKeyReq) GetPublicKey() []byte {
-	if m != nil {
-		return m.PublicKey
-	}
-	return nil
 }
 
 type AssociateKeyRsp struct {
-	DebugMsg             string   `protobuf:"bytes,1,opt,name=DebugMsg,proto3" json:"DebugMsg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -258,13 +209,6 @@ func (m *AssociateKeyRsp) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_AssociateKeyRsp proto.InternalMessageInfo
-
-func (m *AssociateKeyRsp) GetDebugMsg() string {
-	if m != nil {
-		return m.DebugMsg
-	}
-	return ""
-}
 
 type AddKeyReq struct {
 	KeyId                string   `protobuf:"bytes,1,opt,name=KeyId,proto3" json:"KeyId,omitempty"`
@@ -355,7 +299,6 @@ func (m *AddKeyReq) GetPrivateKey() []byte {
 
 type AddKeyRsp struct {
 	RemoteKeyId          string   `protobuf:"bytes,1,opt,name=RemoteKeyId,proto3" json:"RemoteKeyId,omitempty"`
-	DebugMsg             string   `protobuf:"bytes,2,opt,name=DebugMsg,proto3" json:"DebugMsg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -389,13 +332,6 @@ var xxx_messageInfo_AddKeyRsp proto.InternalMessageInfo
 func (m *AddKeyRsp) GetRemoteKeyId() string {
 	if m != nil {
 		return m.RemoteKeyId
-	}
-	return ""
-}
-
-func (m *AddKeyRsp) GetDebugMsg() string {
-	if m != nil {
-		return m.DebugMsg
 	}
 	return ""
 }
@@ -448,12 +384,10 @@ func (m *GetKeyReq) GetRemoteKeyId() string {
 }
 
 type GetKeyRsp struct {
-	Gun                  string   `protobuf:"bytes,1,opt,name=Gun,proto3" json:"Gun,omitempty"`
-	Role                 string   `protobuf:"bytes,2,opt,name=Role,proto3" json:"Role,omitempty"`
-	Algorithm            string   `protobuf:"bytes,3,opt,name=Algorithm,proto3" json:"Algorithm,omitempty"`
-	SignatureAlgorithm   string   `protobuf:"bytes,4,opt,name=SignatureAlgorithm,proto3" json:"SignatureAlgorithm,omitempty"`
-	PublicKey            []byte   `protobuf:"bytes,5,opt,name=PublicKey,proto3" json:"PublicKey,omitempty"`
-	DebugMsg             string   `protobuf:"bytes,6,opt,name=DebugMsg,proto3" json:"DebugMsg,omitempty"`
+	Role                 string   `protobuf:"bytes,1,opt,name=Role,proto3" json:"Role,omitempty"`
+	Algorithm            string   `protobuf:"bytes,2,opt,name=Algorithm,proto3" json:"Algorithm,omitempty"`
+	SignatureAlgorithm   string   `protobuf:"bytes,3,opt,name=SignatureAlgorithm,proto3" json:"SignatureAlgorithm,omitempty"`
+	PublicKey            []byte   `protobuf:"bytes,4,opt,name=PublicKey,proto3" json:"PublicKey,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -484,13 +418,6 @@ func (m *GetKeyRsp) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetKeyRsp proto.InternalMessageInfo
 
-func (m *GetKeyRsp) GetGun() string {
-	if m != nil {
-		return m.Gun
-	}
-	return ""
-}
-
 func (m *GetKeyRsp) GetRole() string {
 	if m != nil {
 		return m.Role
@@ -519,115 +446,6 @@ func (m *GetKeyRsp) GetPublicKey() []byte {
 	return nil
 }
 
-func (m *GetKeyRsp) GetDebugMsg() string {
-	if m != nil {
-		return m.DebugMsg
-	}
-	return ""
-}
-
-type GetKeyInfoReq struct {
-	KeyId                string   `protobuf:"bytes,1,opt,name=KeyId,proto3" json:"KeyId,omitempty"`
-	RemoteKeyId          string   `protobuf:"bytes,2,opt,name=RemoteKeyId,proto3" json:"RemoteKeyId,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetKeyInfoReq) Reset()         { *m = GetKeyInfoReq{} }
-func (m *GetKeyInfoReq) String() string { return proto.CompactTextString(m) }
-func (*GetKeyInfoReq) ProtoMessage()    {}
-func (*GetKeyInfoReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{8}
-}
-
-func (m *GetKeyInfoReq) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetKeyInfoReq.Unmarshal(m, b)
-}
-func (m *GetKeyInfoReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetKeyInfoReq.Marshal(b, m, deterministic)
-}
-func (m *GetKeyInfoReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetKeyInfoReq.Merge(m, src)
-}
-func (m *GetKeyInfoReq) XXX_Size() int {
-	return xxx_messageInfo_GetKeyInfoReq.Size(m)
-}
-func (m *GetKeyInfoReq) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetKeyInfoReq.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetKeyInfoReq proto.InternalMessageInfo
-
-func (m *GetKeyInfoReq) GetKeyId() string {
-	if m != nil {
-		return m.KeyId
-	}
-	return ""
-}
-
-func (m *GetKeyInfoReq) GetRemoteKeyId() string {
-	if m != nil {
-		return m.RemoteKeyId
-	}
-	return ""
-}
-
-type GetKeyInfoRsp struct {
-	Gun                  string   `protobuf:"bytes,1,opt,name=Gun,proto3" json:"Gun,omitempty"`
-	Role                 string   `protobuf:"bytes,2,opt,name=Role,proto3" json:"Role,omitempty"`
-	DebugMsg             string   `protobuf:"bytes,3,opt,name=DebugMsg,proto3" json:"DebugMsg,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetKeyInfoRsp) Reset()         { *m = GetKeyInfoRsp{} }
-func (m *GetKeyInfoRsp) String() string { return proto.CompactTextString(m) }
-func (*GetKeyInfoRsp) ProtoMessage()    {}
-func (*GetKeyInfoRsp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{9}
-}
-
-func (m *GetKeyInfoRsp) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetKeyInfoRsp.Unmarshal(m, b)
-}
-func (m *GetKeyInfoRsp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetKeyInfoRsp.Marshal(b, m, deterministic)
-}
-func (m *GetKeyInfoRsp) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetKeyInfoRsp.Merge(m, src)
-}
-func (m *GetKeyInfoRsp) XXX_Size() int {
-	return xxx_messageInfo_GetKeyInfoRsp.Size(m)
-}
-func (m *GetKeyInfoRsp) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetKeyInfoRsp.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetKeyInfoRsp proto.InternalMessageInfo
-
-func (m *GetKeyInfoRsp) GetGun() string {
-	if m != nil {
-		return m.Gun
-	}
-	return ""
-}
-
-func (m *GetKeyInfoRsp) GetRole() string {
-	if m != nil {
-		return m.Role
-	}
-	return ""
-}
-
-func (m *GetKeyInfoRsp) GetDebugMsg() string {
-	if m != nil {
-		return m.DebugMsg
-	}
-	return ""
-}
-
 type ListKeysReq struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -638,7 +456,7 @@ func (m *ListKeysReq) Reset()         { *m = ListKeysReq{} }
 func (m *ListKeysReq) String() string { return proto.CompactTextString(m) }
 func (*ListKeysReq) ProtoMessage()    {}
 func (*ListKeysReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{10}
+	return fileDescriptor_dd18bd41430f085c, []int{8}
 }
 
 func (m *ListKeysReq) XXX_Unmarshal(b []byte) error {
@@ -661,7 +479,6 @@ var xxx_messageInfo_ListKeysReq proto.InternalMessageInfo
 
 type ListKeysRsp struct {
 	KeyData              []*ListKeysRsp_KeyInfo `protobuf:"bytes,1,rep,name=KeyData,proto3" json:"KeyData,omitempty"`
-	DebugMsg             string                 `protobuf:"bytes,2,opt,name=DebugMsg,proto3" json:"DebugMsg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
 	XXX_sizecache        int32                  `json:"-"`
@@ -671,7 +488,7 @@ func (m *ListKeysRsp) Reset()         { *m = ListKeysRsp{} }
 func (m *ListKeysRsp) String() string { return proto.CompactTextString(m) }
 func (*ListKeysRsp) ProtoMessage()    {}
 func (*ListKeysRsp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{11}
+	return fileDescriptor_dd18bd41430f085c, []int{9}
 }
 
 func (m *ListKeysRsp) XXX_Unmarshal(b []byte) error {
@@ -699,13 +516,6 @@ func (m *ListKeysRsp) GetKeyData() []*ListKeysRsp_KeyInfo {
 	return nil
 }
 
-func (m *ListKeysRsp) GetDebugMsg() string {
-	if m != nil {
-		return m.DebugMsg
-	}
-	return ""
-}
-
 type ListKeysRsp_KeyInfo struct {
 	KeyId                string   `protobuf:"bytes,1,opt,name=KeyId,proto3" json:"KeyId,omitempty"`
 	RemoteKeyId          string   `protobuf:"bytes,2,opt,name=RemoteKeyId,proto3" json:"RemoteKeyId,omitempty"`
@@ -720,7 +530,7 @@ func (m *ListKeysRsp_KeyInfo) Reset()         { *m = ListKeysRsp_KeyInfo{} }
 func (m *ListKeysRsp_KeyInfo) String() string { return proto.CompactTextString(m) }
 func (*ListKeysRsp_KeyInfo) ProtoMessage()    {}
 func (*ListKeysRsp_KeyInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{11, 0}
+	return fileDescriptor_dd18bd41430f085c, []int{9, 0}
 }
 
 func (m *ListKeysRsp_KeyInfo) XXX_Unmarshal(b []byte) error {
@@ -781,7 +591,7 @@ func (m *RemoveKeyReq) Reset()         { *m = RemoveKeyReq{} }
 func (m *RemoveKeyReq) String() string { return proto.CompactTextString(m) }
 func (*RemoveKeyReq) ProtoMessage()    {}
 func (*RemoveKeyReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{12}
+	return fileDescriptor_dd18bd41430f085c, []int{10}
 }
 
 func (m *RemoveKeyReq) XXX_Unmarshal(b []byte) error {
@@ -817,7 +627,6 @@ func (m *RemoveKeyReq) GetRemoteKeyId() string {
 }
 
 type RemoveKeyRsp struct {
-	DebugMsg             string   `protobuf:"bytes,1,opt,name=DebugMsg,proto3" json:"DebugMsg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -827,7 +636,7 @@ func (m *RemoveKeyRsp) Reset()         { *m = RemoveKeyRsp{} }
 func (m *RemoveKeyRsp) String() string { return proto.CompactTextString(m) }
 func (*RemoveKeyRsp) ProtoMessage()    {}
 func (*RemoveKeyRsp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{13}
+	return fileDescriptor_dd18bd41430f085c, []int{11}
 }
 
 func (m *RemoveKeyRsp) XXX_Unmarshal(b []byte) error {
@@ -848,13 +657,6 @@ func (m *RemoveKeyRsp) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RemoveKeyRsp proto.InternalMessageInfo
 
-func (m *RemoveKeyRsp) GetDebugMsg() string {
-	if m != nil {
-		return m.DebugMsg
-	}
-	return ""
-}
-
 type SignReq struct {
 	KeyId                string   `protobuf:"bytes,1,opt,name=KeyId,proto3" json:"KeyId,omitempty"`
 	RemoteKeyId          string   `protobuf:"bytes,2,opt,name=RemoteKeyId,proto3" json:"RemoteKeyId,omitempty"`
@@ -868,7 +670,7 @@ func (m *SignReq) Reset()         { *m = SignReq{} }
 func (m *SignReq) String() string { return proto.CompactTextString(m) }
 func (*SignReq) ProtoMessage()    {}
 func (*SignReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{14}
+	return fileDescriptor_dd18bd41430f085c, []int{12}
 }
 
 func (m *SignReq) XXX_Unmarshal(b []byte) error {
@@ -912,7 +714,6 @@ func (m *SignReq) GetMessage() []byte {
 
 type SignRsp struct {
 	Signature            []byte   `protobuf:"bytes,1,opt,name=Signature,proto3" json:"Signature,omitempty"`
-	DebugMsg             string   `protobuf:"bytes,2,opt,name=DebugMsg,proto3" json:"DebugMsg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -922,7 +723,7 @@ func (m *SignRsp) Reset()         { *m = SignRsp{} }
 func (m *SignRsp) String() string { return proto.CompactTextString(m) }
 func (*SignRsp) ProtoMessage()    {}
 func (*SignRsp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd18bd41430f085c, []int{15}
+	return fileDescriptor_dd18bd41430f085c, []int{13}
 }
 
 func (m *SignRsp) XXX_Unmarshal(b []byte) error {
@@ -950,24 +751,15 @@ func (m *SignRsp) GetSignature() []byte {
 	return nil
 }
 
-func (m *SignRsp) GetDebugMsg() string {
-	if m != nil {
-		return m.DebugMsg
-	}
-	return ""
-}
-
 func init() {
-	proto.RegisterType((*MakeKeyReq)(nil), "grpckeystore.MakeKeyReq")
-	proto.RegisterType((*MakeKeyRsp)(nil), "grpckeystore.MakeKeyRsp")
+	proto.RegisterType((*GenerateKeyReq)(nil), "grpckeystore.GenerateKeyReq")
+	proto.RegisterType((*GenerateKeyRsp)(nil), "grpckeystore.GenerateKeyRsp")
 	proto.RegisterType((*AssociateKeyReq)(nil), "grpckeystore.AssociateKeyReq")
 	proto.RegisterType((*AssociateKeyRsp)(nil), "grpckeystore.AssociateKeyRsp")
 	proto.RegisterType((*AddKeyReq)(nil), "grpckeystore.AddKeyReq")
 	proto.RegisterType((*AddKeyRsp)(nil), "grpckeystore.AddKeyRsp")
 	proto.RegisterType((*GetKeyReq)(nil), "grpckeystore.GetKeyReq")
 	proto.RegisterType((*GetKeyRsp)(nil), "grpckeystore.GetKeyRsp")
-	proto.RegisterType((*GetKeyInfoReq)(nil), "grpckeystore.GetKeyInfoReq")
-	proto.RegisterType((*GetKeyInfoRsp)(nil), "grpckeystore.GetKeyInfoRsp")
 	proto.RegisterType((*ListKeysReq)(nil), "grpckeystore.ListKeysReq")
 	proto.RegisterType((*ListKeysRsp)(nil), "grpckeystore.ListKeysRsp")
 	proto.RegisterType((*ListKeysRsp_KeyInfo)(nil), "grpckeystore.ListKeysRsp.KeyInfo")
@@ -980,45 +772,42 @@ func init() {
 func init() { proto.RegisterFile("grpckeystore.proto", fileDescriptor_dd18bd41430f085c) }
 
 var fileDescriptor_dd18bd41430f085c = []byte{
-	// 608 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x56, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0xae, 0x13, 0x27, 0x69, 0x26, 0xae, 0x40, 0x23, 0x10, 0xee, 0xf2, 0xa3, 0xb0, 0xa7, 0x0a,
-	0x89, 0x1c, 0x8a, 0xc4, 0x05, 0x24, 0x14, 0x52, 0x08, 0x51, 0x08, 0x0a, 0xee, 0x91, 0x93, 0x93,
-	0x2c, 0xae, 0xd5, 0x34, 0x76, 0xbc, 0x4e, 0xa5, 0xdc, 0x78, 0x1c, 0x5e, 0x81, 0xa7, 0xe0, 0xc0,
-	0x91, 0x97, 0x41, 0xbb, 0xfe, 0x77, 0x62, 0x63, 0x29, 0x42, 0xdc, 0x3c, 0xbf, 0x3b, 0xdf, 0xb7,
-	0x33, 0xb3, 0x06, 0xb4, 0x3c, 0x77, 0x7e, 0xcd, 0xb6, 0xdc, 0x77, 0x3c, 0xd6, 0x73, 0x3d, 0xc7,
-	0x77, 0x50, 0x4b, 0xeb, 0xe8, 0x37, 0x05, 0x60, 0x62, 0x5e, 0xb3, 0x31, 0xdb, 0x1a, 0x6c, 0x8d,
-	0x77, 0xa1, 0x3e, 0xdc, 0xac, 0x74, 0xa5, 0xab, 0x9c, 0xb5, 0x0d, 0xf1, 0x89, 0x08, 0xaa, 0xe1,
-	0x2c, 0x99, 0x5e, 0x93, 0x2a, 0xf9, 0x8d, 0x8f, 0xa0, 0xdd, 0x5f, 0x5a, 0x8e, 0x67, 0xfb, 0x57,
-	0x37, 0x7a, 0x5d, 0x1a, 0x12, 0x05, 0xf6, 0x00, 0x2f, 0x6d, 0x6b, 0x65, 0xfa, 0x1b, 0x8f, 0x25,
-	0x6e, 0xaa, 0x74, 0xdb, 0x63, 0xa1, 0x57, 0x49, 0x05, 0xdc, 0xc5, 0x2e, 0x74, 0x0c, 0x76, 0xe3,
-	0xf8, 0x42, 0x1e, 0x2d, 0xc2, 0x4a, 0xd2, 0x2a, 0x71, 0xfa, 0x74, 0x33, 0x5b, 0xda, 0xf3, 0x31,
-	0xdb, 0xca, 0xb2, 0x34, 0x23, 0x51, 0x20, 0x81, 0xe3, 0x0b, 0x36, 0xdb, 0x58, 0x13, 0x6e, 0x85,
-	0xa5, 0xc5, 0x32, 0xfd, 0xad, 0xc0, 0x9d, 0x3e, 0xe7, 0xce, 0xdc, 0x36, 0xfd, 0x08, 0xf1, 0x3d,
-	0x68, 0xa4, 0x4f, 0x0a, 0x84, 0x7c, 0x15, 0xb5, 0xdd, 0x2a, 0x42, 0xa6, 0xea, 0xbb, 0x4c, 0xa9,
-	0x45, 0x4c, 0x35, 0xaa, 0x31, 0xd5, 0x2c, 0x62, 0x2a, 0x8b, 0xbc, 0x95, 0x43, 0x4e, 0x9f, 0xe7,
-	0xc0, 0x71, 0x37, 0x43, 0x86, 0x92, 0x23, 0xe3, 0x97, 0x02, 0xed, 0xfe, 0x62, 0x51, 0x4a, 0x43,
-	0x08, 0xb2, 0xb6, 0x0b, 0xb2, 0x5e, 0x04, 0x52, 0xad, 0x06, 0xb2, 0x51, 0x0d, 0x64, 0x33, 0x7f,
-	0xbd, 0x4f, 0x00, 0xa6, 0x9e, 0x7d, 0x1b, 0x40, 0x0c, 0x39, 0x48, 0x69, 0xe8, 0x28, 0x06, 0x55,
-	0xa9, 0x97, 0xd2, 0x04, 0xd5, 0x72, 0x04, 0x0d, 0xa0, 0x3d, 0x64, 0xfe, 0x61, 0x6d, 0x42, 0x7f,
-	0x28, 0x71, 0x16, 0xee, 0xfe, 0x8f, 0xf1, 0xca, 0xf2, 0xd9, 0x28, 0x1b, 0x97, 0x66, 0x8e, 0x80,
-	0x21, 0x9c, 0x04, 0xa5, 0x8f, 0x56, 0x5f, 0x9d, 0x43, 0x48, 0xf8, 0x9c, 0x49, 0x54, 0x99, 0x87,
-	0xb2, 0x51, 0x3e, 0x81, 0xce, 0x47, 0x9b, 0x8b, 0x9c, 0xdc, 0x60, 0x6b, 0xfa, 0x53, 0x49, 0xc9,
-	0xdc, 0xc5, 0x57, 0xd0, 0x1a, 0xb3, 0xed, 0x85, 0xe9, 0x9b, 0xba, 0xd2, 0xad, 0x9f, 0x75, 0xce,
-	0x9f, 0xf6, 0x32, 0xab, 0x30, 0xe5, 0xdb, 0x8b, 0xea, 0x8a, 0x22, 0xca, 0x9a, 0x82, 0x58, 0x32,
-	0xb1, 0xf0, 0xff, 0xb7, 0x9b, 0x83, 0xbe, 0x07, 0x4d, 0x04, 0xdd, 0x1e, 0xb8, 0xa7, 0xe8, 0xb3,
-	0x74, 0x9e, 0xbf, 0xac, 0x84, 0x2f, 0xd0, 0x12, 0x0d, 0x74, 0xc8, 0x5a, 0xd4, 0xa1, 0x35, 0x61,
-	0x9c, 0x9b, 0x56, 0xb0, 0x22, 0x34, 0x23, 0x12, 0xe9, 0x20, 0x4c, 0xce, 0x5d, 0xd1, 0x92, 0x71,
-	0xa3, 0xca, 0x03, 0x34, 0x23, 0x51, 0x94, 0xd1, 0x7f, 0xfe, 0x5d, 0x05, 0x6d, 0x68, 0x4c, 0x07,
-	0x63, 0xb6, 0xbd, 0x14, 0x17, 0x89, 0x6f, 0xa0, 0x15, 0x3e, 0x1e, 0xa8, 0x67, 0xaf, 0x38, 0x79,
-	0xd5, 0x48, 0x81, 0x85, 0xbb, 0xf4, 0x08, 0x3f, 0x81, 0x96, 0xde, 0x9a, 0xf8, 0x38, 0xeb, 0x9b,
-	0x7b, 0x2e, 0x48, 0x99, 0x59, 0xe6, 0x7b, 0x0d, 0xcd, 0x60, 0x01, 0xe1, 0x83, 0x9c, 0x6b, 0xb4,
-	0x6b, 0xc9, 0x7e, 0x43, 0x14, 0x1d, 0x4c, 0x4a, 0x3e, 0x3a, 0xde, 0x44, 0x64, 0xbf, 0x41, 0x46,
-	0x7f, 0x00, 0x48, 0xe6, 0x0c, 0x1f, 0xee, 0x73, 0x0c, 0x47, 0x99, 0x14, 0x1b, 0x65, 0xa6, 0xb7,
-	0x70, 0x1c, 0x8d, 0x08, 0x9e, 0x16, 0x8c, 0x0e, 0x5b, 0x93, 0xd3, 0xc2, 0xa9, 0xa2, 0x47, 0xf8,
-	0x0e, 0xda, 0x71, 0xe7, 0x21, 0xc9, 0x7a, 0xa6, 0x5b, 0x9b, 0x14, 0xda, 0x64, 0x9a, 0x97, 0xa0,
-	0x8a, 0xde, 0xc0, 0xfb, 0x59, 0xaf, 0xb0, 0x51, 0xc9, 0x3e, 0xb5, 0x88, 0x9b, 0x35, 0xe5, 0xef,
-	0xce, 0x8b, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x59, 0x0d, 0x55, 0x65, 0x04, 0x09, 0x00, 0x00,
+	// 550 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x55, 0xc1, 0x6e, 0xd3, 0x4c,
+	0x10, 0xae, 0x63, 0x37, 0xf9, 0x3d, 0xf1, 0x5f, 0x60, 0x04, 0xc2, 0xb5, 0x0a, 0x0a, 0x7b, 0xa1,
+	0x17, 0x72, 0x28, 0x52, 0x2f, 0x70, 0x09, 0x05, 0xa2, 0xca, 0x80, 0xa2, 0xed, 0x91, 0x93, 0x9b,
+	0x2c, 0xc6, 0x22, 0x8d, 0x1d, 0xaf, 0x53, 0xc9, 0xcf, 0xc0, 0x3b, 0xf0, 0x12, 0x3c, 0x0a, 0x6f,
+	0xc1, 0x53, 0xa0, 0x5d, 0xc7, 0xf6, 0xae, 0x13, 0x87, 0x88, 0xde, 0xbc, 0xf3, 0xcd, 0xf7, 0x65,
+	0xe7, 0x9b, 0x99, 0x0d, 0x60, 0x98, 0x26, 0xd3, 0x6f, 0x2c, 0xe7, 0x59, 0x9c, 0xb2, 0x61, 0x92,
+	0xc6, 0x59, 0x8c, 0x8e, 0x1a, 0x23, 0xe7, 0x70, 0x34, 0x66, 0x0b, 0x96, 0x06, 0x19, 0xf3, 0x59,
+	0x4e, 0xd9, 0x12, 0xef, 0x83, 0x39, 0x5e, 0x2d, 0x5c, 0x63, 0x60, 0x9c, 0xda, 0x54, 0x7c, 0x22,
+	0x82, 0x45, 0xe3, 0x39, 0x73, 0x3b, 0x32, 0x24, 0xbf, 0xc9, 0x0f, 0x43, 0x27, 0xf2, 0x04, 0x07,
+	0xd0, 0xa7, 0xec, 0x26, 0x96, 0xe7, 0xcb, 0xd9, 0x5a, 0x40, 0x0d, 0xe1, 0x09, 0xd8, 0x93, 0xd5,
+	0xf5, 0x3c, 0x9a, 0xfa, 0x2c, 0x97, 0x6a, 0x0e, 0xad, 0x03, 0x02, 0x1d, 0xcd, 0xc3, 0x38, 0x8d,
+	0xb2, 0xaf, 0x37, 0xae, 0x29, 0xd9, 0x75, 0x00, 0x87, 0x80, 0x57, 0x51, 0xb8, 0x08, 0xb2, 0x55,
+	0xca, 0xea, 0x34, 0x4b, 0xa6, 0x6d, 0x41, 0xc8, 0x25, 0xdc, 0x1b, 0x71, 0x1e, 0x4f, 0xa3, 0xba,
+	0xb2, 0xbf, 0x5f, 0xf0, 0x21, 0x1c, 0x16, 0x58, 0x51, 0x6a, 0x71, 0x20, 0x0f, 0x1a, 0x52, 0x3c,
+	0x21, 0xbf, 0x0c, 0xb0, 0x47, 0xb3, 0xd9, 0x5a, 0xb8, 0xa2, 0x19, 0x0a, 0xad, 0x34, 0xb2, 0xb3,
+	0x69, 0xa4, 0x59, 0x1b, 0xa9, 0x57, 0x6d, 0xed, 0x57, 0xf5, 0x61, 0x5b, 0xd5, 0xba, 0xc3, 0xdd,
+	0xa6, 0xc3, 0x4f, 0x01, 0x26, 0x69, 0x74, 0x5b, 0x94, 0xe1, 0xf6, 0x24, 0xac, 0x44, 0xc8, 0x8b,
+	0xaa, 0xa8, 0x7d, 0xda, 0x49, 0x2e, 0xc0, 0x1e, 0xb3, 0x6c, 0xa7, 0x07, 0x0d, 0x91, 0xce, 0xa6,
+	0xc8, 0x77, 0xa3, 0x52, 0xe1, 0x49, 0xe5, 0x90, 0xd1, 0xe6, 0x50, 0x67, 0x3f, 0x87, 0xcc, 0xfd,
+	0x1c, 0xb2, 0x1a, 0x0e, 0x91, 0xff, 0xa1, 0xff, 0x21, 0xe2, 0xe2, 0x36, 0x9c, 0xb2, 0x25, 0xf9,
+	0x69, 0x28, 0x67, 0x9e, 0xe0, 0x2b, 0xe8, 0xf9, 0x2c, 0x7f, 0x1b, 0x64, 0x81, 0x6b, 0x0c, 0xcc,
+	0xd3, 0xfe, 0xd9, 0xb3, 0xa1, 0xb6, 0x61, 0x4a, 0xee, 0x50, 0x94, 0xb7, 0xf8, 0x12, 0xd3, 0x92,
+	0xe1, 0x85, 0x92, 0x2c, 0x62, 0xff, 0x6a, 0x56, 0x39, 0x52, 0xe6, 0xe6, 0x48, 0x59, 0xca, 0x6e,
+	0xbe, 0x07, 0x47, 0x90, 0x6e, 0xd9, 0x1d, 0x5b, 0x73, 0xa4, 0xea, 0xf0, 0x84, 0x7c, 0x86, 0x9e,
+	0x30, 0xf4, 0x0e, 0x92, 0xe8, 0x42, 0xef, 0x23, 0xe3, 0x3c, 0x08, 0x8b, 0x25, 0x70, 0x68, 0x79,
+	0x24, 0xcf, 0xd7, 0xe2, 0x3c, 0x11, 0x2d, 0xaa, 0x1a, 0x27, 0x7f, 0xc0, 0xa1, 0x75, 0xe0, 0xec,
+	0xb7, 0x09, 0xce, 0x98, 0x4e, 0x2e, 0x7c, 0x96, 0x5f, 0x09, 0xd3, 0xd1, 0x87, 0xbe, 0xf2, 0x12,
+	0xe1, 0x89, 0xde, 0x12, 0xfd, 0x75, 0xf3, 0x76, 0xa0, 0x3c, 0x21, 0x07, 0xf8, 0x09, 0x1c, 0x75,
+	0xd7, 0xf1, 0x89, 0x9e, 0xdf, 0x78, 0x52, 0xbc, 0x5d, 0xb0, 0xd4, 0x7b, 0x0d, 0xdd, 0x62, 0xa5,
+	0xf0, 0x71, 0x23, 0xb5, 0x7c, 0x3d, 0xbc, 0xed, 0x40, 0xc9, 0x2e, 0x76, 0xa3, 0xc9, 0xae, 0xf6,
+	0xce, 0xdb, 0x0e, 0x48, 0xf6, 0x1b, 0xf8, 0xaf, 0x1c, 0x48, 0x3c, 0x6e, 0x19, 0x54, 0xb6, 0xf4,
+	0x8e, 0x5b, 0x67, 0x98, 0x1c, 0xe0, 0x3b, 0xb0, 0xab, 0x19, 0x40, 0x4f, 0xcf, 0x54, 0x87, 0xcc,
+	0x6b, 0xc5, 0xa4, 0xcc, 0x39, 0x58, 0xa2, 0x83, 0xf8, 0x48, 0xcf, 0x5a, 0x8f, 0x93, 0xb7, 0x2d,
+	0x2c, 0x78, 0xd7, 0x5d, 0xf9, 0x9f, 0xf5, 0xf2, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x0b, 0xf5,
+	0x27, 0x83, 0xc9, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1033,34 +822,24 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type GRPCKeyStoreClient interface {
-	// MakeKey allows the remote key store to generate or provide a previously
-	// generated private key.  This allows a key store to provide a key pair
-	//  and never divulge private key information. MakeKey/AssociateKey is an
-	// alternative to AddKey.
-	MakeKey(ctx context.Context, in *MakeKeyReq, opts ...grpc.CallOption) (*MakeKeyRsp, error)
-	// AssociateKey follows a successful MakeKey.  It allows notary to inform the
-	// remote key store that the key is in use with the provided
-	// KeyId
+	// GenerateKey allows the key store to provide a key it has
+	// generated.  This allows a key store to provide signing services
+	//  and never divulge private key information.
+	// (GenerateKey/AssociateKey is an alternative to AddKey)
+	GenerateKey(ctx context.Context, in *GenerateKeyReq, opts ...grpc.CallOption) (*GenerateKeyRsp, error)
+	// AssociateKey follows a successful GenerateKey.  It allows notary to
+	// inform the key store or the KeyId that is associated with this key
 	AssociateKey(ctx context.Context, in *AssociateKeyReq, opts ...grpc.CallOption) (*AssociateKeyRsp, error)
-	// AddKey allows the remote key store to save a key that was generated by
-	// notary.  AddKey is an alternative to the MakeKey/AssociateKey sequence.
-	// With AddKey, notary generates they key pair and sends it to the key store.
-	// AddKey maps to KeyStore.AddKey()
+	// AddKey allows a key generated by Notary to be saved in the key store.
+	// AddKey is an alternative to the GenerateKey/AssociateKey sequence.
 	AddKey(ctx context.Context, in *AddKeyReq, opts ...grpc.CallOption) (*AddKeyRsp, error)
-	// Get a stored key from the remote key store
-	// GetKey maps to KeyStore.GetKey()
+	// GetKey retrieves a stored public key from the key store
 	GetKey(ctx context.Context, in *GetKeyReq, opts ...grpc.CallOption) (*GetKeyRsp, error)
-	// Get specific key information from the remote keystore
-	// GetKeyInfo maps to KeyStore.GetKeyInfo()
-	GetKeyInfo(ctx context.Context, in *GetKeyInfoReq, opts ...grpc.CallOption) (*GetKeyInfoRsp, error)
-	// List keys available in the remote keystore
-	// ListKeys maps to KeyStore.ListKeys()
+	// ListKeys retrieves all keys available in the key store
 	ListKeys(ctx context.Context, in *ListKeysReq, opts ...grpc.CallOption) (*ListKeysRsp, error)
-	// Remove a key from the keystore
-	// RemoveKey maps to KeyStore.RemoveKey()
+	// RemoveKey removes a key from the keystore
 	RemoveKey(ctx context.Context, in *RemoveKeyReq, opts ...grpc.CallOption) (*RemoveKeyRsp, error)
 	// Sign a message with the specified key
-	// Sign maps to PrivateKey.Sign()
 	Sign(ctx context.Context, in *SignReq, opts ...grpc.CallOption) (*SignRsp, error)
 }
 
@@ -1072,9 +851,9 @@ func NewGRPCKeyStoreClient(cc *grpc.ClientConn) GRPCKeyStoreClient {
 	return &gRPCKeyStoreClient{cc}
 }
 
-func (c *gRPCKeyStoreClient) MakeKey(ctx context.Context, in *MakeKeyReq, opts ...grpc.CallOption) (*MakeKeyRsp, error) {
-	out := new(MakeKeyRsp)
-	err := c.cc.Invoke(ctx, "/grpckeystore.GRPCKeyStore/MakeKey", in, out, opts...)
+func (c *gRPCKeyStoreClient) GenerateKey(ctx context.Context, in *GenerateKeyReq, opts ...grpc.CallOption) (*GenerateKeyRsp, error) {
+	out := new(GenerateKeyRsp)
+	err := c.cc.Invoke(ctx, "/grpckeystore.GRPCKeyStore/GenerateKey", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1102,15 +881,6 @@ func (c *gRPCKeyStoreClient) AddKey(ctx context.Context, in *AddKeyReq, opts ...
 func (c *gRPCKeyStoreClient) GetKey(ctx context.Context, in *GetKeyReq, opts ...grpc.CallOption) (*GetKeyRsp, error) {
 	out := new(GetKeyRsp)
 	err := c.cc.Invoke(ctx, "/grpckeystore.GRPCKeyStore/GetKey", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gRPCKeyStoreClient) GetKeyInfo(ctx context.Context, in *GetKeyInfoReq, opts ...grpc.CallOption) (*GetKeyInfoRsp, error) {
-	out := new(GetKeyInfoRsp)
-	err := c.cc.Invoke(ctx, "/grpckeystore.GRPCKeyStore/GetKeyInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1146,34 +916,24 @@ func (c *gRPCKeyStoreClient) Sign(ctx context.Context, in *SignReq, opts ...grpc
 
 // GRPCKeyStoreServer is the server API for GRPCKeyStore service.
 type GRPCKeyStoreServer interface {
-	// MakeKey allows the remote key store to generate or provide a previously
-	// generated private key.  This allows a key store to provide a key pair
-	//  and never divulge private key information. MakeKey/AssociateKey is an
-	// alternative to AddKey.
-	MakeKey(context.Context, *MakeKeyReq) (*MakeKeyRsp, error)
-	// AssociateKey follows a successful MakeKey.  It allows notary to inform the
-	// remote key store that the key is in use with the provided
-	// KeyId
+	// GenerateKey allows the key store to provide a key it has
+	// generated.  This allows a key store to provide signing services
+	//  and never divulge private key information.
+	// (GenerateKey/AssociateKey is an alternative to AddKey)
+	GenerateKey(context.Context, *GenerateKeyReq) (*GenerateKeyRsp, error)
+	// AssociateKey follows a successful GenerateKey.  It allows notary to
+	// inform the key store or the KeyId that is associated with this key
 	AssociateKey(context.Context, *AssociateKeyReq) (*AssociateKeyRsp, error)
-	// AddKey allows the remote key store to save a key that was generated by
-	// notary.  AddKey is an alternative to the MakeKey/AssociateKey sequence.
-	// With AddKey, notary generates they key pair and sends it to the key store.
-	// AddKey maps to KeyStore.AddKey()
+	// AddKey allows a key generated by Notary to be saved in the key store.
+	// AddKey is an alternative to the GenerateKey/AssociateKey sequence.
 	AddKey(context.Context, *AddKeyReq) (*AddKeyRsp, error)
-	// Get a stored key from the remote key store
-	// GetKey maps to KeyStore.GetKey()
+	// GetKey retrieves a stored public key from the key store
 	GetKey(context.Context, *GetKeyReq) (*GetKeyRsp, error)
-	// Get specific key information from the remote keystore
-	// GetKeyInfo maps to KeyStore.GetKeyInfo()
-	GetKeyInfo(context.Context, *GetKeyInfoReq) (*GetKeyInfoRsp, error)
-	// List keys available in the remote keystore
-	// ListKeys maps to KeyStore.ListKeys()
+	// ListKeys retrieves all keys available in the key store
 	ListKeys(context.Context, *ListKeysReq) (*ListKeysRsp, error)
-	// Remove a key from the keystore
-	// RemoveKey maps to KeyStore.RemoveKey()
+	// RemoveKey removes a key from the keystore
 	RemoveKey(context.Context, *RemoveKeyReq) (*RemoveKeyRsp, error)
 	// Sign a message with the specified key
-	// Sign maps to PrivateKey.Sign()
 	Sign(context.Context, *SignReq) (*SignRsp, error)
 }
 
@@ -1181,20 +941,20 @@ func RegisterGRPCKeyStoreServer(s *grpc.Server, srv GRPCKeyStoreServer) {
 	s.RegisterService(&_GRPCKeyStore_serviceDesc, srv)
 }
 
-func _GRPCKeyStore_MakeKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MakeKeyReq)
+func _GRPCKeyStore_GenerateKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateKeyReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GRPCKeyStoreServer).MakeKey(ctx, in)
+		return srv.(GRPCKeyStoreServer).GenerateKey(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpckeystore.GRPCKeyStore/MakeKey",
+		FullMethod: "/grpckeystore.GRPCKeyStore/GenerateKey",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GRPCKeyStoreServer).MakeKey(ctx, req.(*MakeKeyReq))
+		return srv.(GRPCKeyStoreServer).GenerateKey(ctx, req.(*GenerateKeyReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1249,24 +1009,6 @@ func _GRPCKeyStore_GetKey_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GRPCKeyStoreServer).GetKey(ctx, req.(*GetKeyReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GRPCKeyStore_GetKeyInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetKeyInfoReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GRPCKeyStoreServer).GetKeyInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/grpckeystore.GRPCKeyStore/GetKeyInfo",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GRPCKeyStoreServer).GetKeyInfo(ctx, req.(*GetKeyInfoReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1330,8 +1072,8 @@ var _GRPCKeyStore_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*GRPCKeyStoreServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "MakeKey",
-			Handler:    _GRPCKeyStore_MakeKey_Handler,
+			MethodName: "GenerateKey",
+			Handler:    _GRPCKeyStore_GenerateKey_Handler,
 		},
 		{
 			MethodName: "AssociateKey",
@@ -1344,10 +1086,6 @@ var _GRPCKeyStore_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetKey",
 			Handler:    _GRPCKeyStore_GetKey_Handler,
-		},
-		{
-			MethodName: "GetKeyInfo",
-			Handler:    _GRPCKeyStore_GetKeyInfo_Handler,
 		},
 		{
 			MethodName: "ListKeys",

@@ -91,7 +91,7 @@ func (s *GenericKeyStore) GetKeyInfo(keyID string) (KeyInfo, error) {
 
 // GenerateKey requests that the keystore internally generate a key.
 // GenericKeyStore doesn't support this operation
-func (s *GenericKeyStore) GenerateKey(keyInfo KeyInfo, algorithm string) (data.PrivateKey, error) {
+func (s *GenericKeyStore) GenerateKey(keyInfo KeyInfo) (data.PrivateKey, error) {
 		return nil, fmt.Errorf("Not supported")
 }
 

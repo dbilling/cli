@@ -37,14 +37,10 @@ func NewCryptoService(keyStores ...trustmanager.KeyStore) *CryptoService {
 // Create is used to generate keys for targets, snapshots and timestamps
 func (cs *CryptoService) Create(role data.RoleName, gun data.GUN, algorithm string) (data.PublicKey, error) {
 
-	if algorithm == data.RSAKey {
-		return nil, fmt.Errorf("%s keys can only be imported", data.RSAKey)
-	}
-
 	// Loop through all keystores to see if any of them will generate a key.
 	for _, ks := range cs.keyStores {
 		// Request that the keystore generate a key.
-		privKey, err := ks.GenerateKey(trustmanager.KeyInfo{Role: role, Gun: gun}, algorithm)
+		privKey, err := ks.GenerateKey(trustmanager.KeyInfo{Role: role, Gun: gun})
 		if err == nil {
       // a keystore successfully generated a key for us
 			pubKey := data.PublicKeyFromPrivate(privKey)
@@ -53,6 +49,10 @@ func (cs *CryptoService) Create(role data.RoleName, gun data.GUN, algorithm stri
 	}
 
   // none of the keystores generated a key, lets make one ourselves
+	if algorithm == data.RSAKey {
+		return nil, fmt.Errorf("%s keys can only be imported", data.RSAKey)
+	}
+
 	privKey, err := utils.GenerateKey(algorithm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate %s key: %v", algorithm, err)

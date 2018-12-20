@@ -681,7 +681,7 @@ func (s *YubiStore) ListKeys() map[string]trustmanager.KeyInfo {
 
 // GenerateKey requests that the yubi generate a key.  Yubi hardware supports this, but
 // it has yet to be implemented here.
-func (s *YubiStore) GenerateKey(keyInfo trustmanager.KeyInfo, algorithm string) (data.PrivateKey, error) {
+func (s *YubiStore) GenerateKey(keyInfo trustmanager.KeyInfo) (data.PrivateKey, error) {
 		return nil, fmt.Errorf("Not yet implemented")
 }
 
