@@ -50,6 +50,38 @@ func GetTrustDirectory() string {
 	return filepath.Join(cliconfig.Dir(), "trust")
 }
 
+// Server returns the base URL for the trust server.
+func GetGrpcKeyStoreServer() (string) {
+	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_KEYSTORE_SERVER"); s != "" {
+		return s
+	}
+	return ""
+}
+
+// Server returns the base URL for the trust server.
+func GetGrpcKeyStoreTlsCertFile() (string) {
+	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_TLS_CERT_FILE"); s != "" {
+		return s
+	}
+	return ""
+}
+
+// Server returns the base URL for the trust server.
+func GetGrpcKeyStoreTlsKeyFile() (string) {
+	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_TLS_KEY_FILE"); s != "" {
+		return s
+	}
+	return ""
+}
+
+// Server returns the base URL for the trust server.
+func GetGrpcKeyStoreTlsCAFile() (string) {
+	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_TLS_CA_FILE"); s != "" {
+		return s
+	}
+	return ""
+}
+
 // certificateDirectory returns the directory containing
 // TLS certificates for the given server. An error is
 // returned if there was an error parsing the server string.
@@ -174,13 +206,18 @@ func GetNotaryRepository(in io.Reader, out io.Writer, userAgent string, repoInfo
 	modifiers = append(modifiers, auth.NewAuthorizer(challengeManager, tokenHandler, basicHandler))
 	tr := transport.NewTransport(base, modifiers...)
 
+
 	return client.NewFileCachedRepository(
 		GetTrustDirectory(),
 		data.GUN(repoInfo.Name.Name()),
 		server,
 		tr,
 		GetPassphraseRetriever(in, out),
-		trustpinning.TrustPinConfig{})
+		trustpinning.TrustPinConfig{},
+    GetGrpcKeyStoreServer(),
+	  GetGrpcKeyStoreTlsCertFile(),
+		GetGrpcKeyStoreTlsKeyFile(),
+		GetGrpcKeyStoreTlsCAFile())
 }
 
 // GetPassphraseRetriever returns a passphrase retriever that utilizes Content Trust env vars

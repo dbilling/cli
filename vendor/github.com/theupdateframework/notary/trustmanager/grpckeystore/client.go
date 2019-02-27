@@ -1,17 +1,18 @@
 package grpckeystore
 
 import (
-	// "crypto/tls"
 	"crypto"
+	"crypto/tls"
 	"crypto/sha256"
 	"crypto/x509"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	// "google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials"
 	"github.com/sirupsen/logrus"
 	"github.com/theupdateframework/notary/trustmanager"
 	"github.com/theupdateframework/notary/tuf/data"
@@ -19,17 +20,13 @@ import (
 	"github.com/theupdateframework/notary/tuf/utils"
 )
 
-// DefaultTimeout is the time a request will block waiting for a response
-// from the server if no other timeout is configured.
-const DefaultTimeout = time.Second * 30
-
 // RemoteKeyStore is a wrapper around the GRPC client, translating between
 // the Go and GRPC APIs.
 type GRPCKeyStore struct {
 	client   GRPCKeyStoreClient
 	location string
 	timeout  time.Duration
-	keys          map[string]GRPCKey
+	keys     map[string]GRPCKey
 }
 
 // GRPCKey represents a remote key stored in the local key map
@@ -51,6 +48,18 @@ type GRPCPrivateKey struct {
 type GRPCkeySigner struct {
 	GRPCPrivateKey
 }
+
+// GRPCClientConfig is all the configuration elements relating to the connection
+// to the GRPC key store server
+type GRPCClientConfig struct {
+	Server string
+	TlsCertFile string
+	TlsKeyFile string
+	TlsCAFile string
+	DialTimeout time.Duration
+	BlockingTimeout time.Duration
+}
+
 
 // NewGRPCPrivateKey returns a GRPCPrivateKey, which implements the data.PrivateKey
 // interface except that the private material is inaccessible
@@ -148,28 +157,111 @@ func (g *GRPCPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts
 	return sig, nil
 }
 
+// DefaultDialTimeout controls the initial connection timeout with the
+// server.  If a grpckeystore is configured, but not accessable, notary
+// keystore initialization will be delayed by this value
+const DefaultDialTimeout = time.Second * 5
+// DefaultTimeout is the time a request will block waiting for a response
+// from the server if no other timeout is configured.
+const DefaultBlockingTimeout = time.Second * 30
+
+func GetGRPCCredentials(config *GRPCClientConfig) (credentials.TransportCredentials, error) {
+
+  var certPool *x509.CertPool
+  var certificates []tls.Certificate
+
+	server, cert, key, ca := config.Server, config.TlsCertFile, config.TlsKeyFile, config.TlsCAFile
+
+	if (cert == "" && key != "") || (cert != "" && key == "") {
+	return nil, fmt.Errorf(
+		"GRPC KeyStore Config Error: You must either include both a cert and key file, or neither")
+	}
+
+	if (cert != "" && key != "" && ca == "") {
+	return nil, fmt.Errorf(
+		"GRPC KeyStore Config Error: TLS Client Authentication cannot be configured without a Server CA File")
+	}
+
+  // set up client auth if configured
+	if cert != "" {
+			// Load the client certificates from disk
+		certificate, err := tls.LoadX509KeyPair(cert, key)
+		if err != nil {
+			return nil, fmt.Errorf("GRPC KeyStore Config Error: could not load client key pair: %s", err)
+		}
+		certificates = append(certificates, certificate)
+	}
+
+
+  // set up the CA, if configured
+	if ca != "" {
+		// Create a certificate pool from the certificate authority
+ 		certPool = x509.NewCertPool()
+ 		calist, err := ioutil.ReadFile(ca)
+ 		if err != nil {
+			return nil, fmt.Errorf("GRPC KeyStore Config Error: could not read ca certificate: %s", err)
+ 		}
+
+ 		// Append the certificates from the CA
+ 		if ok := certPool.AppendCertsFromPEM(calist); !ok {
+			return nil, fmt.Errorf("GRPC KeyStore Config Error: failed to append ca certs")
+ 		}
+	}
+
+	 creds := credentials.NewTLS(&tls.Config{
+			 ServerName:   server, // NOTE: this is required!
+			 Certificates: certificates,
+			 InsecureSkipVerify: (ca == ""),
+			 RootCAs:      certPool,
+	 })
+
+	 return creds, nil
+}
+
 // NewGRPCKeyStore creates a GRPCKeyStore wrapping the provided
 // RemoteKeyStore instance
-func NewGRPCKeyStore() (*GRPCKeyStore, error) {
+func NewGRPCKeyStore(config *GRPCClientConfig) (*GRPCKeyStore, error) {
 
   var err error
-  server := "127.0.0.1:10000"
-	timeout := 5*time.Second
+	var cc *grpc.ClientConn
 
-	cc, err := grpc.Dial(
-		server,
-		grpc.WithInsecure(),
-		grpc.WithBlock(),
-		grpc.WithTimeout(timeout),
-	)
+	if (config.DialTimeout == 0) {
+	  config.DialTimeout = DefaultDialTimeout
+	}
+
+	if (config.BlockingTimeout == 0) {
+	  config.BlockingTimeout = DefaultBlockingTimeout
+	}
+
+  transportCredentials, err := GetGRPCCredentials(config)
+	if err != nil {
+		return nil, err
+	}
+
+  if config.TlsCAFile == "" {
+		cc, err = grpc.Dial(
+			config.Server,
+    	grpc.WithInsecure(),
+			grpc.WithBlock(),
+			grpc.WithTimeout(config.DialTimeout),
+		)
+	} else {
+		cc, err = grpc.Dial(
+			config.Server,
+			grpc.WithTransportCredentials(transportCredentials),
+			grpc.WithBlock(),
+			grpc.WithTimeout(config.DialTimeout),
+		)
+  }
+
 	if err != nil {
 		return nil, err
 	}
 
 	ks := &GRPCKeyStore{
 		client:   NewGRPCKeyStoreClient(cc),
-		location: server,
-		timeout:  timeout,
+		location: config.Server,
+		timeout:  config.BlockingTimeout,
 		keys:     make(map[string]GRPCKey),
   }
 
@@ -190,7 +282,7 @@ func (s *GRPCKeyStore) getContext() (context.Context, context.CancelFunc) {
 
 // Location returns a human readable indication of where the storage is located.
 func (s *GRPCKeyStore) Location() string {
-	return fmt.Sprintf("Remote Key Store @ %s", s.location)
+	return fmt.Sprintf("Remote GRPC Key Store @ %s", s.location)
 }
 
 // The following methods implement the PrivateKey inteface

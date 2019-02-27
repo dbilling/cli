@@ -19,6 +19,7 @@ import (
 	"github.com/theupdateframework/notary/client/changelist"
 	"github.com/theupdateframework/notary/cryptoservice"
 	store "github.com/theupdateframework/notary/storage"
+	"github.com/theupdateframework/notary/trustmanager/grpckeystore"
 	"github.com/theupdateframework/notary/trustpinning"
 	"github.com/theupdateframework/notary/tuf"
 	"github.com/theupdateframework/notary/tuf/data"
@@ -53,6 +54,17 @@ type repository struct {
 	LegacyVersions int // number of versions back to fetch roots to sign with
 }
 
+// GetPathRelativeToConfig gets a configuration key which is a path, and if
+// it is not empty or an absolute path, returns the absolute path relative
+// to the configuration file
+func GetPathRelativeToBaseDir(baseDir string, path string) string {
+
+	if path == "" || filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Clean(filepath.Join(filepath.Dir(baseDir), path))
+}
+
 // NewFileCachedRepository is a wrapper for NewRepository that initializes
 // a file cache from the provided repository, local config information and a crypto service.
 // It also retrieves the remote store associated to the base directory under where all the
@@ -60,7 +72,9 @@ type repository struct {
 //
 // In case of a nil RoundTripper, a default offline store is used instead.
 func NewFileCachedRepository(baseDir string, gun data.GUN, baseURL string, rt http.RoundTripper,
-	retriever notary.PassRetriever, trustPinning trustpinning.TrustPinConfig) (Repository, error) {
+	retriever notary.PassRetriever, trustPinning trustpinning.TrustPinConfig,
+	grpcKeyStoreServer string, gprcKeyStoreTlsCertFile string, gprcKeyStoreTlsKeyFile string,
+	gprcKeyStoreTlsCAFile string) (Repository, error) {
 
 	cache, err := store.NewFileStore(
 		filepath.Join(baseDir, tufDir, filepath.FromSlash(gun.String()), "metadata"),
@@ -70,7 +84,17 @@ func NewFileCachedRepository(baseDir string, gun data.GUN, baseURL string, rt ht
 		return nil, err
 	}
 
-	keyStores, err := getKeyStores(baseDir, retriever)
+  grpcKeyStoreConfig := &grpckeystore.GRPCClientConfig{
+		Server:             grpcKeyStoreServer,
+		TlsCertFile:        GetPathRelativeToBaseDir(baseDir, gprcKeyStoreTlsCertFile),
+		TlsKeyFile:         GetPathRelativeToBaseDir(baseDir, gprcKeyStoreTlsKeyFile),
+		TlsCAFile:          GetPathRelativeToBaseDir(baseDir, gprcKeyStoreTlsCAFile),
+    DialTimeout:        0,
+		BlockingTimeout:    0,
+	}
+
+
+	keyStores, err := getKeyStores(baseDir, retriever, grpcKeyStoreConfig)
 	if err != nil {
 		return nil, err
 	}
