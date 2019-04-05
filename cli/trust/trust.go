@@ -29,9 +29,11 @@ import (
 	"github.com/theupdateframework/notary/passphrase"
 	"github.com/theupdateframework/notary/storage"
 	"github.com/theupdateframework/notary/trustmanager"
+	"github.com/theupdateframework/notary/trustmanager/grpckeystore"
 	"github.com/theupdateframework/notary/trustpinning"
 	"github.com/theupdateframework/notary/tuf/data"
 	"github.com/theupdateframework/notary/tuf/signed"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -50,7 +52,20 @@ func GetTrustDirectory() string {
 	return filepath.Join(cliconfig.Dir(), "trust")
 }
 
-// Server returns the base URL for the trust server.
+// GetGrpcKeyStoreConfig sets up the client grpc keystore configuration
+func GetGrpcKeyStoreConfig() grpckeystore.GRPCClientConfig  {
+	return grpckeystore.GRPCClientConfig{
+		Server:             GetGrpcKeyStoreServer(),
+		TLSCertFile:        GetGrpcKeyStoreTLSCertFile(),
+		TLSKeyFile:         GetGrpcKeyStoreTLSKeyFile(),
+		TLSCAFile:          GetGrpcKeyStoreTLSCAFile(),
+    DialTimeout:        0,
+		BlockingTimeout:    0,
+    Metadata:          metadata.Pairs(),
+	}
+}
+
+// GetGrpcKeyStoreServer returns the base URL for the grpc keystore server.
 func GetGrpcKeyStoreServer() (string) {
 	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_KEYSTORE_SERVER"); s != "" {
 		return s
@@ -58,24 +73,24 @@ func GetGrpcKeyStoreServer() (string) {
 	return ""
 }
 
-// Server returns the base URL for the trust server.
-func GetGrpcKeyStoreTlsCertFile() (string) {
+// GetGrpcKeyStoreTLSCertFile returns the path of the client TLS cert file
+func GetGrpcKeyStoreTLSCertFile() (string) {
 	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_TLS_CERT_FILE"); s != "" {
 		return s
 	}
 	return ""
 }
 
-// Server returns the base URL for the trust server.
-func GetGrpcKeyStoreTlsKeyFile() (string) {
+// GetGrpcKeyStoreTLSKeyFile returns the path of the client TLS key file
+func GetGrpcKeyStoreTLSKeyFile() (string) {
 	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_TLS_KEY_FILE"); s != "" {
 		return s
 	}
 	return ""
 }
 
-// Server returns the base URL for the trust server.
-func GetGrpcKeyStoreTlsCAFile() (string) {
+// GetGrpcKeyStoreTLSCAFile  returns the path of the client TLS ca file
+func GetGrpcKeyStoreTLSCAFile() (string) {
 	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_TLS_CA_FILE"); s != "" {
 		return s
 	}
@@ -214,11 +229,10 @@ func GetNotaryRepository(in io.Reader, out io.Writer, userAgent string, repoInfo
 		tr,
 		GetPassphraseRetriever(in, out),
 		trustpinning.TrustPinConfig{},
-    GetGrpcKeyStoreServer(),
-	  GetGrpcKeyStoreTlsCertFile(),
-		GetGrpcKeyStoreTlsKeyFile(),
-		GetGrpcKeyStoreTlsCAFile())
+		GetGrpcKeyStoreConfig())
 }
+
+
 
 // GetPassphraseRetriever returns a passphrase retriever that utilizes Content Trust env vars
 func GetPassphraseRetriever(in io.Reader, out io.Writer) notary.PassRetriever {

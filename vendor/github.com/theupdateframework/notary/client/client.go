@@ -73,8 +73,7 @@ func GetPathRelativeToBaseDir(baseDir string, path string) string {
 // In case of a nil RoundTripper, a default offline store is used instead.
 func NewFileCachedRepository(baseDir string, gun data.GUN, baseURL string, rt http.RoundTripper,
 	retriever notary.PassRetriever, trustPinning trustpinning.TrustPinConfig,
-	grpcKeyStoreServer string, gprcKeyStoreTlsCertFile string, gprcKeyStoreTlsKeyFile string,
-	gprcKeyStoreTlsCAFile string) (Repository, error) {
+	grpcKeyStoreConfig grpckeystore.GRPCClientConfig) (Repository, error) {
 
 	cache, err := store.NewFileStore(
 		filepath.Join(baseDir, tufDir, filepath.FromSlash(gun.String()), "metadata"),
@@ -84,17 +83,7 @@ func NewFileCachedRepository(baseDir string, gun data.GUN, baseURL string, rt ht
 		return nil, err
 	}
 
-  grpcKeyStoreConfig := &grpckeystore.GRPCClientConfig{
-		Server:             grpcKeyStoreServer,
-		TlsCertFile:        GetPathRelativeToBaseDir(baseDir, gprcKeyStoreTlsCertFile),
-		TlsKeyFile:         GetPathRelativeToBaseDir(baseDir, gprcKeyStoreTlsKeyFile),
-		TlsCAFile:          GetPathRelativeToBaseDir(baseDir, gprcKeyStoreTlsCAFile),
-    DialTimeout:        0,
-		BlockingTimeout:    0,
-	}
-
-
-	keyStores, err := getKeyStores(baseDir, retriever, grpcKeyStoreConfig)
+	keyStores, err := getKeyStores(baseDir, retriever, &grpcKeyStoreConfig)
 	if err != nil {
 		return nil, err
 	}

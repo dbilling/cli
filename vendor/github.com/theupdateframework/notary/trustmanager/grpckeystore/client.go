@@ -3,7 +3,6 @@ package grpckeystore
 import (
 	"crypto"
 	"crypto/tls"
-	"crypto/sha256"
 	"crypto/x509"
 	"fmt"
 	"io"
@@ -13,33 +12,37 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+  "google.golang.org/grpc/metadata"
 	"github.com/sirupsen/logrus"
+	"github.com/theupdateframework/notary"
 	"github.com/theupdateframework/notary/trustmanager"
 	"github.com/theupdateframework/notary/tuf/data"
   "github.com/theupdateframework/notary/tuf/signed"
 	"github.com/theupdateframework/notary/tuf/utils"
 )
 
-// RemoteKeyStore is a wrapper around the GRPC client, translating between
+// GRPCKeyStore is a wrapper around the GRPC client, translating between
 // the Go and GRPC APIs.
 type GRPCKeyStore struct {
-	client   GRPCKeyStoreClient
-	location string
-	timeout  time.Duration
-	keys     map[string]GRPCKey
+	client     GRPCKeyStoreClient
+	clientConn *grpc.ClientConn
+	location   string
+	timeout    time.Duration
+	keys       map[string]GRPCKey
+	metadata   metadata.MD
 }
 
 // GRPCKey represents a remote key stored in the local key map
 type GRPCKey struct {
 	gun    data.GUN
 	role   data.RoleName
-	remoteKeyId string
+	remoteKeyID string
 }
 
 // GRPCPrivateKey represents a private key from the remote key store
 type GRPCPrivateKey struct {
 	data.PublicKey
-	remoteKeyId string
+	remoteKeyID string
 	store *GRPCKeyStore
 	signatureAlgorithm string
 }
@@ -53,13 +56,13 @@ type GRPCkeySigner struct {
 // to the GRPC key store server
 type GRPCClientConfig struct {
 	Server string
-	TlsCertFile string
-	TlsKeyFile string
-	TlsCAFile string
+	TLSCertFile string
+	TLSKeyFile string
+	TLSCAFile string
 	DialTimeout time.Duration
 	BlockingTimeout time.Duration
+  Metadata metadata.MD
 }
-
 
 // NewGRPCPrivateKey returns a GRPCPrivateKey, which implements the data.PrivateKey
 // interface except that the private material is inaccessible
@@ -67,7 +70,7 @@ func NewGRPCPrivateKey(remoteID string, signatureAlgorithm string, store *GRPCKe
 
 	return &GRPCPrivateKey{
 		PublicKey:          pubKey,
-		remoteKeyId:        remoteID,
+		remoteKeyID:        remoteID,
 		store:              store,
 		signatureAlgorithm: signatureAlgorithm,
 	}
@@ -104,73 +107,25 @@ func (g GRPCPrivateKey) SignatureAlgorithm() data.SigAlgorithm {
 	return data.SigAlgorithm(g.signatureAlgorithm)
 }
 
-// Sign is a required method of the crypto.Signer interface and the data.PrivateKey
-// interface
-func (g *GRPCPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts) ([]byte, error) {
-
-  logrus.Debugf("GRPCkeystore Sign invoked for keyid: %s", g.ID())
-  var sig []byte
-  hash := sha256.Sum256(msg)
-	var hashbytes []byte = hash[:]
-
-	req := &SignReq{
-		KeyId:              g.ID(),
-		RemoteKeyId:        g.remoteKeyId,
-		Message:            hashbytes,
-	}
-
-  s:= g.store
-	ctx, cancel := s.getContext()
-	defer cancel()
-	rsp, err := s.client.Sign(ctx, req)
-
-	if err != nil {
-		logrus.Debugf("GRPCkeystore Sign failed: %s", err)
-	  return nil, fmt.Errorf("GRPC Sign failed: %s", err)
-	}
-
-	switch g.SignatureAlgorithm() {
-	case data.ECDSASignature: {
-		sig, err = utils.ParseECDSASignature(rsp.Signature, g.Public())
-		if err != nil {
-			logrus.Debugf("GRPCkeystore Signature error: %s", err)
-			return nil, err
-		}
-	}
-	case data.RSAPSSSignature, data.RSAPKCS1v15Signature: {
-		// the RSA signature verifiers can handle the whole asn.1 encoded signature
-		sig = rsp.Signature
-	}
-	default:
-	  logrus.Debugf("GRPCkeystore unsupported SignatureAlgorithm: %s", g.SignatureAlgorithm())
-	  return nil, fmt.Errorf("GRPCkeystore unsupported SignatureAlgorithm: %s", g.SignatureAlgorithm())
-	}
-
-  // attempt to verify signature
-	v := signed.Verifiers[g.SignatureAlgorithm()]
-	err = v.Verify(g.PublicKey, sig, msg)
-	if err != nil {
-		logrus.Debugf("GRPCkeystore Signature verification error: %s", err)
-	  return nil, fmt.Errorf("GRPC signature verfication error: %s", err)
-	}
-
-	return sig, nil
-}
-
 // DefaultDialTimeout controls the initial connection timeout with the
-// server.  If a grpckeystore is configured, but not accessable, notary
-// keystore initialization will be delayed by this value
+// server.  If a grpckeystore server is configured, but not accessable,
+// notary keystore initialization will be delayed by this value
 const DefaultDialTimeout = time.Second * 5
-// DefaultTimeout is the time a request will block waiting for a response
-// from the server if no other timeout is configured.
+
+// DefaultBlockingTimeout is the time a request will block waiting
+// for a response from the server if no other timeout is configured.
 const DefaultBlockingTimeout = time.Second * 30
 
+// GetGRPCCredentials takes a client configuration struct and returns
+// the corresponding TransportCredentials for the GRPC connection
 func GetGRPCCredentials(config *GRPCClientConfig) (credentials.TransportCredentials, error) {
 
   var certPool *x509.CertPool
   var certificates []tls.Certificate
 
-	server, cert, key, ca := config.Server, config.TlsCertFile, config.TlsKeyFile, config.TlsCAFile
+  cert := config.TLSCertFile
+  key := config.TLSKeyFile
+  ca := config.TLSCAFile
 
 	if (cert == "" && key != "") || (cert != "" && key == "") {
 	return nil, fmt.Errorf(
@@ -192,7 +147,6 @@ func GetGRPCCredentials(config *GRPCClientConfig) (credentials.TransportCredenti
 		certificates = append(certificates, certificate)
 	}
 
-
   // set up the CA, if configured
 	if ca != "" {
 		// Create a certificate pool from the certificate authority
@@ -209,7 +163,6 @@ func GetGRPCCredentials(config *GRPCClientConfig) (credentials.TransportCredenti
 	}
 
 	 creds := credentials.NewTLS(&tls.Config{
-			 ServerName:   server, // NOTE: this is required!
 			 Certificates: certificates,
 			 InsecureSkipVerify: (ca == ""),
 			 RootCAs:      certPool,
@@ -218,12 +171,10 @@ func GetGRPCCredentials(config *GRPCClientConfig) (credentials.TransportCredenti
 	 return creds, nil
 }
 
-// NewGRPCKeyStore creates a GRPCKeyStore wrapping the provided
-// RemoteKeyStore instance
+// NewGRPCKeyStore creates a GRPCKeyStore Client
 func NewGRPCKeyStore(config *GRPCClientConfig) (*GRPCKeyStore, error) {
 
   var err error
-	var cc *grpc.ClientConn
 
 	if (config.DialTimeout == 0) {
 	  config.DialTimeout = DefaultDialTimeout
@@ -238,32 +189,29 @@ func NewGRPCKeyStore(config *GRPCClientConfig) (*GRPCKeyStore, error) {
 		return nil, err
 	}
 
-  if config.TlsCAFile == "" {
-		cc, err = grpc.Dial(
-			config.Server,
-    	grpc.WithInsecure(),
-			grpc.WithBlock(),
-			grpc.WithTimeout(config.DialTimeout),
-		)
-	} else {
-		cc, err = grpc.Dial(
-			config.Server,
-			grpc.WithTransportCredentials(transportCredentials),
-			grpc.WithBlock(),
-			grpc.WithTimeout(config.DialTimeout),
-		)
-  }
+	cc, err := grpc.Dial(
+		config.Server,
+		grpc.WithTransportCredentials(transportCredentials),
+		grpc.WithBlock(),
+		grpc.WithTimeout(config.DialTimeout),
+	)
 
 	if err != nil {
 		return nil, err
 	}
 
+
+
 	ks := &GRPCKeyStore{
-		client:   NewGRPCKeyStoreClient(cc),
-		location: config.Server,
-		timeout:  config.BlockingTimeout,
-		keys:     make(map[string]GRPCKey),
+		client:     NewGRPCKeyStoreClient(cc),
+		clientConn: cc,
+		location:   config.Server,
+		timeout:    config.BlockingTimeout,
+		metadata:   config.Metadata,
+		keys:       make(map[string]GRPCKey),
   }
+
+
 
 	ks.ListKeys() // populate keys field
   return ks, nil
@@ -274,6 +222,7 @@ func NewGRPCKeyStore(config *GRPCClientConfig) (*GRPCKeyStore, error) {
 func (s *GRPCKeyStore) Name() string {
 	return "GRPC remote store"
 }
+
 // getContext returns a context with the timeout configured at initialization
 // time of the RemoteStore.
 func (s *GRPCKeyStore) getContext() (context.Context, context.CancelFunc) {
@@ -285,29 +234,33 @@ func (s *GRPCKeyStore) Location() string {
 	return fmt.Sprintf("Remote GRPC Key Store @ %s", s.location)
 }
 
+// Close the client grpc connection
+func (s *GRPCKeyStore) closeClient() {
+  if (s.clientConn != nil) {
+	  s.clientConn.Close()
+  }
+	return
+}
+
+
 // The following methods implement the PrivateKey inteface
 
 // GenerateKey requests that the keystore internally generate a key.
 func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo) (data.PrivateKey, error) {
 
   logrus.Debugf("GRPCKeystore GenerateKey request for role:%s gun:%s ", keyInfo.Role, keyInfo.Gun)
-	// We only support generating root keys for now
+	// We only support generating root and targets keys for now
 	if (keyInfo.Role != data.CanonicalRootRole) && (keyInfo.Role != data.CanonicalTargetsRole)  {
 		 logrus.Debugf("GRPCKeystore GenerateKey error: currently only supporting root and targets, requested role:%s", keyInfo.Role)
-		return nil, fmt.Errorf("GRPC keystore only supports generating root keys, got role %s", keyInfo.Role)
+		return nil, fmt.Errorf("GRPC keystore only supports generating root/target keys, got role %s", keyInfo.Role)
 	}
-
-// TODO: support additional key types besides ecdsa
-//  if (algorithm != data.ECDSAKey) {
-//	  logrus.Debugf("GRPCKeystore GenerateKey error: currently only supporting ecdsa, requested type:%s", algorithm)
-//	  return nil, fmt.Errorf("Currently Unsupported Key Type: %s", algorithm)
-//	}
 
 	req := &GenerateKeyReq{
 		Gun:                string(keyInfo.Gun),
 		Role:               string(keyInfo.Role),
 	}
 	ctx, cancel := s.getContext()
+	ctx = metadata.NewOutgoingContext(ctx, s.metadata)
 	defer cancel()
 	rsp, err := s.client.GenerateKey(ctx, req)
 
@@ -318,11 +271,13 @@ func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo) (data.PrivateKe
 
   // The public key returned from the GRPC keystore is expected
 	// to be ASN.1 DER encoded.  That means the key type is imbedded in the
-	// encoding.  This code counts on ParsePublicKey to figure it out
+	// encoding.
+	// Note: ParsePublicKey doesn't yet support ed25519 keys, but
+	// when it does, this code should support ed25519 keys without changes
   pubKey, err := utils.ParsePublicKey(rsp.PublicKey)
   if err != nil {
-		logrus.Debugf("GRPCKeystore GenerateKey ParsePublicKey failed: %s", err)
-		return nil, fmt.Errorf("GRPCKeystore GenerateKey ParsePublicKey failed: %s", err)
+		logrus.Debugf("GRPCKeystore ParsePublicKey failed: %s", err)
+		return nil, fmt.Errorf("GRPCKeystore ParsePublicKey failed: %s", err)
   }
   privKey := NewGRPCPrivateKey(rsp.RemoteKeyId, rsp.SignatureAlgorithm, s, pubKey)
 	if privKey == nil {
@@ -332,10 +287,11 @@ func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo) (data.PrivateKe
 
 	akreq := &AssociateKeyReq{
 		KeyId:              privKey.ID(),
-		RemoteKeyId:        privKey.remoteKeyId,
+		RemoteKeyId:        privKey.remoteKeyID,
 	}
 
 	ctx, cancel = s.getContext()
+	ctx = metadata.NewOutgoingContext(ctx, s.metadata)
 	defer cancel()
 	_, err = s.client.AssociateKey(ctx, akreq)
 
@@ -347,7 +303,7 @@ func (s *GRPCKeyStore) GenerateKey(keyInfo trustmanager.KeyInfo) (data.PrivateKe
 	s.keys[privKey.ID()] = GRPCKey{
 			gun:         keyInfo.Gun,
 			role:        keyInfo.Role,
-			remoteKeyId: rsp.RemoteKeyId,
+			remoteKeyID: rsp.RemoteKeyId,
 	}
 
   logrus.Debug("GRPC GenerateKey (GenerateKey/AssociateKey) Succeeded")
@@ -360,12 +316,6 @@ func (s *GRPCKeyStore) AddKey(keyInfo trustmanager.KeyInfo, privKey data.Private
 
 	logrus.Debugf("GRPCKeystore AddKey invoked for role:%s gun:%s ", keyInfo.Role, keyInfo.Gun)
 
-	// TODO:  currently for prototype, we don't do addkey
-	if keyInfo.Role != "" {
-	  logrus.Debug("GRPC AddKey operation is currently disabled")
-		return fmt.Errorf("Not supported yet")
-	}
-
 	req := &AddKeyReq{
 		KeyId:              privKey.ID(),
 		Gun:                string(keyInfo.Gun),
@@ -376,6 +326,7 @@ func (s *GRPCKeyStore) AddKey(keyInfo trustmanager.KeyInfo, privKey data.Private
 		PrivateKey:         privKey.Private(),
 	}
 	ctx, cancel := s.getContext()
+	ctx = metadata.NewOutgoingContext(ctx, s.metadata)
 	defer cancel()
 	rsp, err := s.client.AddKey(ctx, req)
 
@@ -387,14 +338,14 @@ func (s *GRPCKeyStore) AddKey(keyInfo trustmanager.KeyInfo, privKey data.Private
 	s.keys[privKey.ID()] = GRPCKey{
 			gun:         keyInfo.Gun,
 			role:        keyInfo.Role,
-			remoteKeyId: rsp.RemoteKeyId,
+			remoteKeyID: rsp.RemoteKeyId,
 	}
 
   logrus.Debugf("GRPCkeystore AddKey Operation Succeeded")
 	return nil
 }
 
-// GetKey returns the PrivateKey given a KeyID
+// GetKey returns the Pseudo PrivateKey given a KeyID
 func (s *GRPCKeyStore) GetKey(keyID string) (data.PrivateKey, data.RoleName, error) {
 
 	logrus.Debugf("GRPCkeystore GetKey operation called for keyId: %s", keyID)
@@ -405,9 +356,10 @@ func (s *GRPCKeyStore) GetKey(keyID string) (data.PrivateKey, data.RoleName, err
 
 	req := &GetKeyReq{
 	  KeyId:              keyID,
-		RemoteKeyId:        key.remoteKeyId,
+		RemoteKeyId:        key.remoteKeyID,
 	}
 	ctx, cancel := s.getContext()
+	ctx = metadata.NewOutgoingContext(ctx, s.metadata)
 	defer cancel()
 	rsp, err := s.client.GetKey(ctx, req)
 
@@ -424,7 +376,7 @@ func (s *GRPCKeyStore) GetKey(keyID string) (data.PrivateKey, data.RoleName, err
 		logrus.Debugf("GRPCKeystore GetKey ParsePublicKey failed: %s", err)
 		return nil, "", fmt.Errorf("GRPCKeystore GetKey ParsePublicKey failed: %s", err)
   }
-  privKey := NewGRPCPrivateKey(key.remoteKeyId, rsp.SignatureAlgorithm, s, pubKey)
+  privKey := NewGRPCPrivateKey(key.remoteKeyID, rsp.SignatureAlgorithm, s, pubKey)
 	if privKey == nil {
 		logrus.Debug("GRPCKeystore GetKey failed to initialize key")
 		return nil, "", fmt.Errorf("GRPCKeystore GetKey failed to initialize key")
@@ -468,6 +420,7 @@ func (s *GRPCKeyStore) ListKeys() map[string]trustmanager.KeyInfo {
 
 	req := &ListKeysReq{}
 	ctx, cancel := s.getContext()
+  ctx = metadata.NewOutgoingContext(ctx, s.metadata)
 	defer cancel()
 	rsp, err := s.client.ListKeys(ctx, req)
 
@@ -484,7 +437,7 @@ func (s *GRPCKeyStore) ListKeys() map[string]trustmanager.KeyInfo {
 			keys[ki.GetKeyId()] = GRPCKey{
 					gun:         data.GUN(ki.GetGun()),
 					role:        data.RoleName(ki.GetRole()),
-					remoteKeyId: ki.GetRemoteKeyId(),
+					remoteKeyID: ki.GetRemoteKeyId(),
 			}
 		}
 	}
@@ -496,7 +449,100 @@ func (s *GRPCKeyStore) ListKeys() map[string]trustmanager.KeyInfo {
 
 // RemoveKey removes the key from the keyfilestore
 func (s *GRPCKeyStore) RemoveKey(keyID string) error {
-	logrus.Debug("GRPCkeystore RemoveKey operation invoked")
-	logrus.Debug("GRPCkeystore RemoveKey not yet supported")
+
+	logrus.Debugf("GRPCkeystore RemoveKey operation called for keyId: %s", keyID)
+	key, ok := s.keys[keyID]
+	if !ok {
+		return trustmanager.ErrKeyNotFound{KeyID: keyID}
+	}
+
+	req := &RemoveKeyReq{
+		KeyId:              keyID,
+		RemoteKeyId:        key.remoteKeyID,
+	}
+	ctx, cancel := s.getContext()
+	ctx = metadata.NewOutgoingContext(ctx, s.metadata)
+	defer cancel()
+	_,err := s.client.RemoveKey(ctx, req)
+
+	if err != nil {
+		logrus.Debugf("GRPCkeystore RemoveKey RPC Operation Failed: %s", err)
+		return fmt.Errorf("GRPC RemoveKey error: %s", err)
+	}
+
+  // remove key from the keymap
+  delete(s.keys, keyID)
+
+	logrus.Debugf("GRPC RemoveKey succeeded for keyId: %s", keyID)
 	return nil
+
+}
+
+// Sign is a required method of the crypto.Signer interface and the data.PrivateKey
+// interface
+func (g *GRPCPrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts) ([]byte, error) {
+
+  logrus.Debugf("GRPCkeystore Sign invoked for keyid: %s", g.ID())
+  var sig []byte
+
+  // hash algorithm needs to be coordinated with the verifiers.  Currently
+	// notary's verifiers are hardcoded to use SHA256
+	hashAlgorithm := notary.SHA256
+
+	req := &SignReq{
+		KeyId:              g.ID(),
+		RemoteKeyId:        g.remoteKeyID,
+		HashAlgorithm:      hashAlgorithm,
+		Message:            msg,
+	}
+
+  s:= g.store
+	ctx, cancel := s.getContext()
+	ctx = metadata.NewOutgoingContext(ctx, s.metadata)
+	defer cancel()
+	rsp, err := s.client.Sign(ctx, req)
+
+	if err != nil {
+		logrus.Debugf("GRPCkeystore Sign failed: %s", err)
+	  return nil, fmt.Errorf("GRPC Sign failed: %s", err)
+	}
+
+	switch g.SignatureAlgorithm() {
+	case data.ECDSASignature: {
+		// the EDCSA signature from the keystore may be either asn.1 encoded or
+		// raw (i.e. just R,S concatenated together). ParseECDSASignature will
+		// automatically normalize either type to the the raw R,S format that the verifier
+		// expects.
+		sig, err = utils.ParseECDSASignature(rsp.Signature, g.Public())
+		if err != nil {
+			logrus.Debugf("GRPCkeystore Signature error: %s", err)
+			return nil, err
+		}
+	}
+	case data.EDDSASignature: {
+		// Go's asn.1/x.509 don't yet support parsing an EDDSA asn.1 encoded
+		// signature, so currently the only accepted format is the raw signature
+		// (i.e. not ASN.1 encoded)
+		sig = rsp.Signature
+	}
+	case data.RSAPSSSignature, data.RSAPKCS1v15Signature: {
+		// the RSA signature returned from the keystore is always expected to be an asn.1
+		// encoded signature.  Notary's signature verifier handle this format
+		// natively.
+		sig = rsp.Signature
+	}
+	default:
+	  logrus.Debugf("GRPCkeystore unsupported SignatureAlgorithm: %s", g.SignatureAlgorithm())
+	  return nil, fmt.Errorf("GRPCkeystore unsupported SignatureAlgorithm: %s", g.SignatureAlgorithm())
+	}
+
+  // attempt to verify signature
+	v := signed.Verifiers[g.SignatureAlgorithm()]
+	err = v.Verify(g.PublicKey, sig, msg)
+	if err != nil {
+		logrus.Debugf("GRPCkeystore Signature verification error: %s", err)
+	  return nil, fmt.Errorf("GRPC signature verfication error: %s", err)
+	}
+
+	return sig, nil
 }
