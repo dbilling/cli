@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	cliconfig "github.com/docker/cli/cli/config"
@@ -61,7 +62,7 @@ func GetGrpcKeyStoreConfig() grpckeystore.GRPCClientConfig  {
 		TLSCAFile:          GetGrpcKeyStoreTLSCAFile(),
     DialTimeout:        0,
 		BlockingTimeout:    0,
-    Metadata:          metadata.Pairs(),
+    Metadata:           GetGrpcKeyStoreMetadata(),
 	}
 }
 
@@ -95,6 +96,20 @@ func GetGrpcKeyStoreTLSCAFile() (string) {
 		return s
 	}
 	return ""
+}
+
+// GetGrpcKeyStoreMetadata returns metadata matching the coded key,value pairs
+func GetGrpcKeyStoreMetadata() (metadata.MD) {
+	md := metadata.Pairs()
+	if s := os.Getenv("DOCKER_CONTENT_TRUST_GRPC_METADATA"); s != "" {
+    metadataList := strings.Split(s,",")
+	  // loop through the comma seperated list, adding each key, value pair
+		numPairs := len(metadataList)/2
+		for i := 0; i < numPairs; i++ {
+			md.Append(metadataList[i], metadataList[i+1])
+		}
+	}
+	return md
 }
 
 // certificateDirectory returns the directory containing
