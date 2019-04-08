@@ -106,7 +106,7 @@ func GetGrpcKeyStoreMetadata() (metadata.MD) {
 	  // loop through the comma seperated list, adding each key, value pair
 		numPairs := len(metadataList)/2
 		for i := 0; i < numPairs; i++ {
-			md.Append(metadataList[i], metadataList[i+1])
+			md.Append(metadataList[2*i], metadataList[(2*i)+1])
 		}
 	}
 	return md
